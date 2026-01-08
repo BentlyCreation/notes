@@ -10,7 +10,7 @@
 
 - **模式识别**（Pattern Recognition）
   - 贝叶斯决策理论
-
+  - [PDF链接](prml_note/prml.pdf)
 - **自然语言处理**（Natural Language Processing）
   - 绪论
   - 传统统计方法

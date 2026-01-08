@@ -1,0 +1,434 @@
+\documentclass[a4paper, 11pt]{ctexart}
+
+%===========================================================
+% 宏包引言区
+%===========================================================
+\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry} % 页面边距
+\usepackage{amsmath, amssymb, amsfonts, bm} % 数学公式与粗体向量
+\usepackage{booktabs} % 三线表
+\usepackage{graphicx} % 图片支持
+\usepackage{float}    % 图片浮动位置控制
+\usepackage{hyperref} % 生成可点击的目录
+\usepackage{xcolor}   % 颜色支持
+\usepackage{listings} % 代码块支持
+\usepackage{fancyhdr} % 页眉页脚
+\usepackage{tcolorbox} % 文本框
+% --- 伪代码专用宏包 ---
+\usepackage{algorithm}
+\usepackage{algpseudocode} 
+\usepackage{amsmath} % 数学公式支持
+
+% 汉化算法关键词（可选，如果你想显示“输入/输出”而不是“Input/Output”）
+% \floatname{algorithm}{算法}
+% \renewcommand{\algorithmicrequire}{\textbf{输入:}}
+% \renewcommand{\algorithmicensure}{\textbf{输出:}}
+
+% 或者保持英文高逼格（推荐）
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+%===========================================================
+% 页面设置
+%===========================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{模式识别学习记录} % 左页眉
+\fancyhead[R]{\thepage}        % 右页眉
+\renewcommand{\headrulewidth}{0.5pt}
+
+% 设置超链接颜色
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=magenta,      
+    urlcolor=blue,
+}
+
+% 定义“重点”文本框
+\newtcolorbox{important}[1][]{colback=red!5!white, colframe=red!75!black, title=考点/重点: #1}
+
+%===========================================================
+% 文档基本信息
+%===========================================================
+\title{\textbf{模式识别 (Pattern Recognition) \\ 期末复习笔记}}
+\author{整理人：Your Name}
+\date{\today}
+
+%===========================================================
+% 正文开始
+%===========================================================
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage % 目录后强制换页
+
+%===========================================================
+% 正文内容区
+%===========================================================
+
+\section{绪论 \small{(3学时 向世明)}}
+
+\subsection{模式识别基础}
+\begin{itemize}
+    \item \textbf{基本定义}：
+    \begin{itemize}
+        \item \textbf{模式 (Pattern)}：对客体（Object）或事件（Event）的描述，通常是向量形式。
+        \item \textbf{模式类 (Pattern Class)}：具有共同属性的模式集合。
+        \item \textbf{模式识别}：利用机器（计算机）自动将特定模式映射到特定类别的过程。
+    \end{itemize}
+    \item \textbf{经典实例}：
+    \begin{itemize}
+        \item \textbf{硬币分类}：利用尺寸、重量等特征区分不同面值的硬币。
+        \item \textbf{鱼的分类}（Duda教材经典例子）：区分“三文鱼 (Salmon)”和“鲈鱼 (Sea Bass)”。单一特征（如长度）往往重叠严重，需要多特征（如长度+光泽度）组合以寻找最佳决策边界。
+    \end{itemize}
+\end{itemize}
+
+\subsection{模式识别系统流程}
+一个典型的模式识别系统包含以下五个核心环节：
+\begin{enumerate}
+    \item \textbf{数据获取 (Data Acquisition)}：通过传感器将物理变量转换为数字信号（如摄像头采集图像、麦克风采集声音）。
+    \item \textbf{预处理 (Preprocessing)}：去噪、分割、平滑、归一化，旨在提高信噪比，简化后续处理。
+    \item \textbf{特征提取与选择 (Feature Extraction \& Selection)}：
+    \begin{itemize}
+        \item \textbf{提取}：从原始数据中计算新的特征（变换）。
+        \item \textbf{选择}：从一组特征中挑选出最具区分力的子集（降维），避免“维数灾难”。
+    \end{itemize}
+    \item \textbf{分类决策 (Classification/Decision)}：利用训练好的模型（分类器）对输入特征进行类别判定。
+    \item \textbf{后处理 (Post-processing)}：利用上下文信息（Context）、先验知识或代价函数对分类结果进行修正（例如在OCR中利用语言模型纠错）。
+\end{enumerate}
+
+\subsection{模式识别系统设计}
+设计周期通常是一个不断迭代的反馈过程：
+\begin{itemize}
+    \item \textbf{数据收集}：划分训练集（Training Set）、验证集（Validation Set）和测试集（Test Set）。
+    \item \textbf{特征选择}：寻找具有\textbf{不变性 (Invariance)}的特征（如对平移、旋转、缩放不敏感）。
+    \item \textbf{模型选择}：决定使用统计模型、神经网络模型还是句法模型；决定模型的复杂度。
+    \item \textbf{训练 (Training)}：利用样本进行学习，估计模型参数。
+    \item \textbf{评价 (Evaluation)}：核心指标是\textbf{泛化能力 (Generalization)}，即在未见过的测试数据上的表现，需警惕\textbf{过拟合 (Overfitting)}。
+\end{itemize}
+
+\subsection{模式识别方法分类}
+\begin{description}
+    \item[基于数据形式]：
+    \begin{itemize}
+        \item \textbf{统计模式识别 (Statistical PR)}：基于特征向量，利用概率论和统计学理论（\textbf{本课程重点}）。
+        \item \textbf{句法/结构模式识别 (Syntactic/Structural PR)}：将模式分解为基元（Primitives），利用形式语言和语法规则描述结构关系（适合汉字、染色体等结构性强的对象）。
+    \end{itemize}
+    \item[基于学习方式]：
+    \begin{itemize}
+        \item \textbf{监督学习 (Supervised Learning)}：训练数据带有类别标签（Label）。
+        \item \textbf{无监督学习 (Unsupervised Learning)}：训练数据无标签，旨在发现数据内部结构（如聚类）。
+        \item \textbf{强化学习 (Reinforcement Learning)}：通过与环境交互，基于奖励/惩罚机制进行学习。
+    \end{itemize}
+\end{description}
+
+\subsection{本课程内容体系}
+\begin{itemize}
+    \item \textbf{基础}：贝叶斯决策理论（统计模式识别的基石）。
+    \item \textbf{估计}：概率密度函数估计（参数法与非参数法）。
+    \item \textbf{分类器}：线性分类器、非线性分类器（神经网络、SVM、决策树）。
+    \item \textbf{工程}：特征提取与选择、聚类分析。
+\end{itemize}
+
+\newpage
+\section{贝叶斯决策理论 \small{(3学时 向世明)}}
+
+\subsection{核心公式}
+首先，我们需要充分理解先验、似然、后验的意义。在贝叶斯决策理论中，最重要的公式是贝叶斯公式：
+\begin{equation}
+    P(\omega_i|x) = \frac{p(x|\omega_i)P(\omega_i)}{p(x)}
+\end{equation}
+
+其中，$P(\omega_i)$ 是类别 $\omega_i$ 的先验概率，$p(x|\omega_i)$ 是在类别 $\omega_i$ 下观测到样本 $x$ 的似然概率密度，$P(\omega_i|x)$ 是在观测到样本 $x$ 后类别 $\omega_i$ 的后验概率。
+
+一个典型案例是HIV检测，假设某种检测方法对HIV阳性患者的检测准确率为99.9\%，对HIV阴性患者的检测准确率为99.5\%。如果一个人被检测为阳性，我们需要计算他实际患有HIV的概率。假设总体中HIV阳性率为0.1\%，则可以利用贝叶斯公式计算后验概率。
+概率计算为：
+\begin{equation}
+    P(\text{HIV}^+| \text{Test}^+) = \frac{P(\text{Test}^+|\text{HIV}^+)P(\text{HIV}^+)}{P(\text{Test}^+)}
+\end{equation}
+
+\subsection{最小错误率贝叶斯决策}
+等价于最大后验概率决策：
+\begin{equation}
+    \text{Decide } \omega_i \text{ if } P(\omega_i|x) > P(\omega_j|x), \forall j \neq i
+\end{equation}
+
+这比较容易理解，因为大多数情况下我们总是希望在当前特征下做出最有可能的决策。
+
+\subsection{最小风险贝叶斯决策}
+在实际应用中，不同类型的错误造成的后果严重程度不同（例如误诊癌症），因此引入损失函数（Loss Function）的概念。
+定义 $\lambda(\alpha_i|\omega_j)$ 为当真实类别为 $\omega_j$ 时采取决策 $\alpha_i$ 所带来的损失。
+
+我们的目标是最小化\textbf{期望风险（Expected Risk）}。对于观测样本 $x$，采取决策 $\alpha_i$ 的\textbf{条件风险}定义为：
+\begin{equation}
+   E_{\omega|x}[\lambda(\alpha_i|\omega)] = \sum_{j=1}^{c} \lambda(\alpha_i|\omega_j) \underbrace{P(\omega_j|x)}_{\text{在该条件下}\omega\text{发生的概率}}
+\end{equation}
+
+\textbf{决策规则：}
+选择风险最小的决策 $a$：
+\begin{equation}
+    a = \arg \min_{j=1,\dots,a} R(\alpha_j|x)
+\end{equation}
+
+\textbf{特例：0-1 损失函数}
+如果损失函数定义为“对则无损，错则罚1”：
+\begin{equation}
+    \lambda(\alpha_i|\omega_j) = \begin{cases} 0, & i=j \\ 1, & i \neq j \end{cases}
+\end{equation}
+
+此时，最小风险决策完全等价于\textbf{最小错误率贝叶斯决策}（即最大后验概率决策 MAP）。
+
+\subsection{分类器设计}
+分类器可以看作是一个计算一组\textbf{判别函数（Discriminant Functions）} $g_i(x)$ 并选择最大值的机器。
+
+\textbf{决策规则：}
+如果 $g_i(x) > g_j(x), \forall j \neq i$，则将 $x$ 归类为 $\omega_i$。
+
+\textbf{判别函数的形式：}
+\begin{enumerate}
+    \item \textbf{基础形式：}
+    常用的判别函数形式有：
+    \begin{itemize}
+        \item $g_i(x) = P(\omega_i|x)$ （直接使用后验概率）
+        \item $g_i(x) = p(x|\omega_i)P(\omega_i)$ （去掉分母 $p(x)$）
+        \item $g_i(x) = \ln p(x|\omega_i) + \ln P(\omega_i)$ （取对数，变乘法为加法）
+    \end{itemize}
+
+    \item \textbf{更一般形式 (General Case)：}
+    PPT中给出了判别函数的更一般定义：
+    \begin{equation}
+        g_i(x) = f(p(x|\omega_i)) + h(x, \omega_i)
+    \end{equation}
+    其中：
+    \begin{itemize}
+        \item $f(\cdot)$ 是单调函数（通常取 $\ln$），用于变换似然度。
+        \item $h(x, \omega_i)$ 是包含先验概率 $P(\omega_i)$ 和损失 $\lambda$ 的项。
+    \end{itemize}
+
+    \item \textbf{注：与神经网络的联系}
+    这与现代神经网络最后的\textbf{判别器 (Discriminator)} 设计本质一致。神经网络最后一层（Logits）输出的值 $z_i = w_i^T x + b_i$，实际上就是在拟合这个 $g_i(x)$。其中 $w_i^T x$ 对应特征的似然度部分，而偏置 $b_i$ 往往隐含了先验概率 $P(\omega_i)$ 的信息。
+\end{enumerate}
+
+\subsection{高斯密度下的判别函数}
+当类条件概率密度 $p(x|\omega_i)$ 服从多元正态分布 $N(\mu_i, \Sigma_i)$ 时，判别函数具有解析解。
+
+多元正态分布概率密度公式：
+\begin{equation}
+    p(x) = \frac{1}{(2\pi)^{d/2}|\Sigma|^{1/2}} \exp \left( -\frac{1}{2}(x-\mu)^T \Sigma^{-1} (x-\mu) \right)
+\end{equation}
+
+取对数形式的判别函数 $g_i(x)$ 为：
+\begin{equation}
+    g_i(x) = -\frac{1}{2}(x-\mu_i)^T \Sigma_i^{-1} (x-\mu_i) - \frac{1}{2}\ln|\Sigma_i| + \ln P(\omega_i)
+\end{equation}
+
+根据协方差矩阵 $\Sigma_i$ 的不同，分为三种情形：
+
+\subsubsection{情形一：$\Sigma_i = \sigma^2 I$（各特征独立且方差相等）}
+此时各类协方差矩阵相同且为对角阵，几何上数据分布呈正球体，大小相同。判别函数可简化。
+
+\textbf{1. 先验概率相等 ($P(\omega_i) = P(\omega_j)$)：}
+\begin{itemize}
+    \item \textbf{判别依据：} 此时 $\ln P(\omega_i)$ 项为常数可忽略，决策规则简化为最小化\textbf{欧氏距离平方}：
+    \[ g_i(x) \propto -\|x - \mu_i\|^2 \]
+    \item \textbf{分类器名称：} \textbf{最小距离分类器 (Minimum Distance Classifier)}。
+    \item \textbf{决策边界：} 连接两类均值向量 $\mu_i$ 和 $\mu_j$ 线段的\textbf{垂直平分面}，经过中点 $x_0 = \frac{1}{2}(\mu_i + \mu_j)$。
+\end{itemize}
+
+\textbf{2. 先验概率不相等 ($P(\omega_i) \neq P(\omega_j)$)：}
+\begin{itemize}
+    \item \textbf{判别依据：} 依然是线性判别函数，但包含偏置项：
+    \[ g_i(x) = \frac{1}{\sigma^2}\mu_i^T x - \frac{1}{2\sigma^2}\mu_i^T \mu_i + \ln P(\omega_i) \]
+    \item \textbf{决策边界：} 决策面依然与 $\mu_i - \mu_j$ \textbf{正交}，但\textbf{不再经过连线中点}。
+    \item \textbf{偏移规律：} 决策面会向先验概率较小的一侧偏移（即先验概率大的类别占据更大的决策区域）。偏移量为：
+    \[ x_0 = \frac{1}{2}(\mu_i + \mu_j) - \frac{\sigma^2}{\|\mu_i - \mu_j\|^2} \ln \frac{P(\omega_i)}{P(\omega_j)} (\mu_i - \mu_j) \]
+\end{itemize}
+
+\subsubsection{情形二：$\Sigma_i = \Sigma$（协方差矩阵相等）}
+此时各类数据分布呈超椭球体，形状和方向相同（平行），但中心不同。
+
+\textbf{1. 先验概率相等 ($P(\omega_i) = P(\omega_j)$)：}
+\begin{itemize}
+    \item \textbf{判别依据：} 最小化\textbf{马氏距离 (Mahalanobis Distance)} 平方：
+    \begin{equation}
+        r^2 = (x-\mu_i)^T \Sigma^{-1} (x-\mu_i)
+    \end{equation}
+    \item \textbf{决策边界：} 经过均值连线中点的超平面。但由于 $\Sigma$ 不再是单位阵，决策面通常\textbf{不与均值连线正交}。
+\end{itemize}
+
+\textbf{2. 先验概率不相等 ($P(\omega_i) \neq P(\omega_j)$)：}
+\begin{itemize}
+    \item \textbf{判别依据：} 线性判别函数 $g_i(x) = w_i^T x + w_{i0}$，其中 $w_i = \Sigma^{-1}\mu_i$。
+    \item \textbf{决策边界：} 决策面 $x_0$ 同样会偏离中点，向先验概率较小的一方偏移。
+\end{itemize}
+
+\subsubsection{情形三：$\Sigma_i \neq \Sigma_j$（协方差矩阵任意）}
+\begin{itemize}
+    \item \textbf{几何意义：} 各类数据的分布形状、方向、大小都不一样。
+    \item \textbf{判别函数：} 无法消除二次项，形式为 $x^T W_i x + w_i^T x + w_{i0}$，是\textbf{二次判别函数}。
+    \item \textbf{决策边界：} \textbf{超二次曲面}。根据协方差矩阵的差异，可能表现为超球面、超椭球面、超双曲面或超平面等多种形态。
+\end{itemize}
+
+\subsection{错误率分析}
+\textbf{贝叶斯错误率（Bayes Error）}是理论上分类器能达到的最低错误率。
+\begin{equation}
+    P(\text{error}) = \int P(\text{error}|x)p(x)dx
+\end{equation}
+对于两类问题，错误率等于两个类条件概率密度曲线重叠部分的面积。特征的分离度越好，重叠越小，贝叶斯错误率越低。
+
+
+
+\newpage
+\section{概率密度函数估计 \small{(6学时 张燕明)}}
+\subsection{基本概念}
+\subsection{最大似然估计}
+\subsection{贝叶斯估计}
+\subsection{正态分布下的贝叶斯估计}
+\subsection{贝叶斯学习}
+\subsection{特征维数问题}
+\subsection{期望最大法（EM）}
+\subsection{隐马尔可夫模型}
+
+\newpage
+\section{非参数法 \small{(3学时 张燕明)}}
+\subsection{密度估计}
+\subsection{Parzen窗方法}
+\subsection{K近邻估计}
+\subsection{最近邻分类器}
+\subsection{K近邻分类器的改进}
+\subsection{距离度量}
+
+\newpage
+\section{线性分类器设计 \small{(3学时 张燕明)}}
+\subsection{引言}
+\subsection{线性判别函数与决策面}
+\subsection{广义线性判别函数}
+\subsection{感知准则函数}
+\subsection{松驰方法}
+\subsection{线性最小二乘方法}
+\subsection{多类线性判别函数}
+
+\newpage
+\section{神经网络和深度学习 \small{(9学时 张燕明)}}
+\subsection{人工神经网络发展历程}
+\subsection{人工神经网络基础}
+\subsection{单层前馈神经网络}
+\subsection{多层感知器与误差反向传播算法}
+\subsection{BP算法讨论}
+\subsection{反馈神经网络}
+\subsection{径向基函数网络}
+\subsection{自组织映射}
+\subsection{深度学习简介}
+\subsection{波尔兹曼机简介}
+\subsection{自编码器}
+\subsection{卷积神经网络}
+\subsection{Recurrent Neural Network}
+
+\newpage
+\section{特征提取与选择 \small{(6学时 张燕明)}}
+\subsection{维数灾难}
+\subsection{特征提取}
+\subsection{线性方法}
+\subsection{非线性方法}
+\subsection{特征选择}
+
+\newpage
+\section{模型选择 \small{(3学时 张燕明)}}
+\subsection{模型选择原则}
+\subsection{模型评价标准}
+\subsection{基于偏差和方差的分类器设计准则}
+\subsection{分类器集成}
+\subsection{Adaboost学习方法及其应用}
+
+\newpage
+\section{聚类分析 \small{(6学时 张燕明)}}
+\subsection{K均值聚类}
+\subsection{模糊K均值聚类}
+\subsection{层次聚类}
+\subsection{谱聚类}
+\subsection{在线聚类}
+\subsection{集成聚类}
+
+\newpage
+\section{支持向量机与核方法 \small{(6学时 向世明)}}
+\subsection{结构风险、经验风险与VC维}
+\subsection{线性可分支持向量机与硬间隔最大化}
+\subsection{线性支持向量机与软间隔最大化}
+\subsection{非线性支持向量机}
+\subsection{支持向量机的优化与扩展}
+
+\newpage
+\section{决策树方法 \small{(3学时 向世明)}}
+\subsection{决策树模型、学习与特征选择}
+\subsection{决策树生成与剪枝（ID3, C4.5, CART等算法）}
+\subsection{随机森林算法}
+
+\newpage
+\section{模式识别前沿趋势 \small{(3学时 向世明)}}
+\subsection{课程内容总体回顾}
+\subsection{模式识别发展现状与新动态}
+\subsection{模式识别中的挑战性问题}
+
+\newpage
+\section{考核 \small{(6学时 向世明)}}
+\subsection{考试+答疑}
+
+\newpage
+%===========================================================
+% 常用 LaTeX 模板区
+%===========================================================
+\appendix
+\section*{附录：模式识别常用 LaTeX 模板}
+\addcontentsline{toc}{section}{附录：常用 LaTeX 模板}
+
+\subsection*{1. 学术三线表模板}
+\begin{table}[H]
+    \centering
+    \caption{不同分类器在 Iris 数据集上的错误率对比}
+    \label{tab:pr_error}
+    \begin{tabular}{lccc} 
+        \toprule
+        \textbf{算法} & \textbf{训练集错误率} & \textbf{测试集错误率} & \textbf{计算耗时(ms)} \\
+        \midrule
+        KNN ($K=3$) & 0.02 & 0.04 & 12 \\
+        Fisher LDA & 0.05 & 0.06 & \textbf{2} \\
+        SVM (RBF Kernel) & \textbf{0.01} & \textbf{0.03} & 45 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection*{2. 图片插入模板 (已注释)}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.7\textwidth]{figures/decision_boundary.png} 
+%     \caption{线性分类器与非线性分类器的决策边界对比}
+%     \label{fig:boundary}
+% \end{figure}
+
+\subsection*{3. 模式识别核心公式模板}
+
+\paragraph{贝叶斯决策规则：}
+后验概率计算：
+$$ P(\omega_i | \bm{x}) = \frac{p(\bm{x} | \omega_i) P(\omega_i)}{p(\bm{x})} $$
+最小错误率决策：若 $P(\omega_i|\bm{x}) > P(\omega_j|\bm{x})$，则判定 $\bm{x} \in \omega_i$。
+
+\paragraph{多元正态分布 (Gaussian Density)：}
+$$ p(\bm{x}) = \frac{1}{(2\pi)^{d/2} |\bm{\Sigma}|^{1/2}} \exp \left[ -\frac{1}{2} (\bm{x} - \bm{\mu})^T \bm{\Sigma}^{-1} (\bm{x} - \bm{\mu}) \right] $$
+
+\paragraph{线性判别函数 (Linear Discriminant)：}
+$$ g(\bm{x}) = \bm{w}^T \bm{x} + w_0 $$
+
+\paragraph{最大似然估计 (MLE)：}
+$$ \hat{\bm{\theta}} = \arg \max_{\bm{\theta}} \prod_{k=1}^{N} p(\bm{x}_k | \bm{\theta}) \quad \Rightarrow \quad \hat{\bm{\theta}} = \arg \max_{\bm{\theta}} \sum_{k=1}^{N} \ln p(\bm{x}_k | \bm{\theta}) $$
+
+\paragraph{SVM 优化目标 (硬间隔)：}
+$$ \min_{\bm{w}, b} \frac{1}{2} ||\bm{w}||^2 \quad \text{s.t.} \quad y_i(\bm{w}^T \bm{x}_i + b) \ge 1, \quad i=1,\dots,N $$
+
+\paragraph{特征值分解 (PCA)：}
+协方差矩阵 $\bm{S}$ 的特征方程：
+$$ \bm{S} \bm{u}_i = \lambda_i \bm{u}_i $$
+
+\paragraph{K-Means 目标函数：}
+$$ J = \sum_{j=1}^{K} \sum_{\bm{x} \in C_j} ||\bm{x} - \bm{m}_j||^2 $$
+
+\end{document}

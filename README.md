@@ -16,7 +16,7 @@
   - 传统统计方法
   - 序列标注与隐马尔可夫模型
   - 深度学习在NLP中的应用
-  - [PDF链接](notes/nlp_llm_note/nlp_llm.pdf)
+  - [PDF链接](nlp_llm_note/nlp_llm.pdf)
 
 ---
 

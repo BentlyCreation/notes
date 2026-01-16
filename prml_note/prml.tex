@@ -17,12 +17,12 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode} 
 \usepackage{amsmath} % 数学公式支持
-
+\usepackage{tikz}
 % 汉化算法关键词（可选，如果你想显示“输入/输出”而不是“Input/Output”）
 % \floatname{algorithm}{算法}
 % \renewcommand{\algorithmicrequire}{\textbf{输入:}}
 % \renewcommand{\algorithmicensure}{\textbf{输出:}}
-
+\usetikzlibrary{arrows, automata, positioning}
 % 或者保持英文高逼格（推荐）
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
@@ -177,6 +177,67 @@
 \end{equation}
 
 此时，最小风险决策完全等价于\textbf{最小错误率贝叶斯决策}（即最大后验概率决策 MAP）。
+
+\subsection{带拒识的贝叶斯决策 (Reject Option)}
+在某些高风险应用（如医疗诊断、指纹识别）中，如果分类器对某个样本的判断信心不足，为了避免做出严重的错误决策，可以选择\textbf{“拒绝识别”}（Reject），交由人工处理。
+
+\begin{itemize}
+    \item \textbf{动作空间扩展}：
+    定义决策集合为 $\{\alpha_1, \dots, \alpha_c, \alpha_{c+1}\}$，其中 $\alpha_{c+1}$ 表示“拒识”。
+    \item \textbf{损失函数定义}：
+    设 $\lambda_s$ 为误分带来的损失（Substitution cost），$\lambda_r$ 为拒识带来的损失（Rejection cost）。通常要求 $0 < \lambda_r < \lambda_s$（否则没必要拒识）。
+    \begin{equation}
+        \lambda(\alpha_i|\omega_j) = \begin{cases} 
+        0, & i=j \quad (\text{正确}) \\
+        \lambda_s, & i \neq j, i \le c \quad (\text{误分}) \\
+        \lambda_r, & i = c+1 \quad (\text{拒识})
+        \end{cases}
+    \end{equation}
+    \item \textbf{条件风险}：
+    \begin{itemize}
+        \item 做出分类决策 $\alpha_i$ ($i \le c$) 的风险：
+        $$ R(\alpha_i|x) = \sum_{j \neq i} \lambda_s P(\omega_j|x) = \lambda_s [1 - P(\omega_i|x)] $$
+        \item 做出拒识决策 $\alpha_{c+1}$ 的风险：
+        $$ R(\alpha_{c+1}|x) = \lambda_r $$
+    \end{itemize}
+    \item \textbf{决策规则}：
+    当且仅当\textbf{拒识的风险}小于\textbf{分类的最小风险}时，选择拒识。
+    $$ \lambda_r < \min_{i \le c} R(\alpha_i|x) = \lambda_s (1 - \max_i P(\omega_i|x)) $$
+    整理得拒识条件为：
+    \begin{equation}
+        \max_i P(\omega_i|x) < 1 - \frac{\lambda_r}{\lambda_s}
+    \end{equation}
+    即：只有当最大后验概率低于阈值 $T = 1 - \frac{\lambda_r}{\lambda_s}$ 时，才拒绝识别。
+\end{itemize}
+
+\subsection{开放集识别 (Open Set Recognition)}
+传统的模式识别通常假设\textbf{闭集 (Closed Set)} 环境，即测试样本一定属于训练集中定义的 $c$ 个类别之一。然而在实际应用中，可能会出现训练集中从未见过的\textbf{未知类别 (Unknown Classes)}。
+
+\begin{itemize}
+    \item \textbf{问题定义}：
+    \begin{itemize}
+        \item \textbf{训练集}：包含 $c$ 个已知类别的样本。
+        \item \textbf{测试集}：包含已知类别的样本 + 未知类别的样本。
+        \item \textbf{目标}：正确分类已知类别样本，同时将未知类别样本识别为“未知”或“第 $c+1$ 类”。
+    \end{itemize}
+    
+    \item \textbf{与拒识的区别}：
+    \begin{itemize}
+        \item \textbf{拒识}：是在已知类别中“拿不准”（位于决策边界附近），属于\textbf{模糊区}。
+        \item \textbf{开放集}：是完全不属于已知类别（位于特征空间远离已知分布的区域），属于\textbf{未知区}。
+    \end{itemize}
+
+    \item \textbf{简单解决方案（基于阈值）}：
+    
+    引入距离阈值或概率阈值。
+    \begin{equation}
+        \text{Decision}(x) = \begin{cases}
+        \arg \max_i g_i(x), & \text{if } \max_i g_i(x) > \tau \\
+        \text{Unknown}, & \text{otherwise}
+        \end{cases}
+    \end{equation}
+    其中 $g_i(x)$ 可以是后验概率，也可以是样本到类中心的距离的负值（如 $1/d(x, \mu_i)$）。这实际上限制了每个类别的决策区域必须是紧致的（Bounded），而非延伸至无穷远。
+\end{itemize}
 
 \subsection{分类器设计}
 分类器可以看作是一个计算一组\textbf{判别函数（Discriminant Functions）} $g_i(x)$ 并选择最大值的机器。
@@ -482,9 +543,9 @@ P(\text { error })=\sum_{i=1}^c \sum_{j \neq i} P\left(\mathbf{x} \in R_j, \omeg
     \begin{itemize}
         \item \textbf{基本原理}：利用全概率公式，对给定参数 $\theta$ 下的概率密度进行加权平均，权重即为参数的后验概率 $p(\theta|D)$。
         \item \textbf{预测公式}：
-        \begin{equation}
-            p(x|D) = \int_{\theta} p(x|\theta, D) p(\theta|D) d\theta = \int_{\theta} p(x|\theta) p(\theta|D) d\theta
-        \end{equation}
+            \begin{equation}
+                p(x|D) = \int_{\theta} p(x|\theta, D) p(\theta|D) d\theta = \int_{\theta} p(x|\theta) p(\theta|D) d\theta
+            \end{equation}
         （注：假设给定参数 $\theta$ 时，$x$ 的分布与训练集 $D$ 无关）。
         \item \textbf{物理意义}：这是\textbf{不同参数下的密度函数的加权平均}。
         \item \textbf{近似计算}：当积分难以直接计算时，常用 $M$ 个采样点的平均来近似：
@@ -574,7 +635,7 @@ P(\text { error })=\sum_{i=1}^c \sum_{j \neq i} P\left(\mathbf{x} \in R_j, \omeg
 贝叶斯估计的一个重要特性是支持\textbf{增量学习 (Incremental Learning)}。随着样本逐个到来，参数的后验分布可以不断更新，且不需要重新计算之前的所有数据。
 
 \subsubsection{1. 迭代更新公式}
-记 $D^n = \{x_1, x_2, \dots, x_n\}$ 为包含 $n$ 个样本的集合。根据贝叶斯公式，参数 $\theta$ 的后验分布可以表示为：
+记 $D^n = \{x_1, x_2, \dots, x_n\}$ 为包含 $n$ 个样本的集合。根据贝叶斯公式，参数 $\theta$ 的后验分布可以表示为（注意这个表示需要一定的技巧，可以稍微背一背）：
 \begin{equation}
     p(\theta|D^n) = \frac{p(x_n|\theta) p(\theta|D^{n-1})}{\int p(x_n|\theta) p(\theta|D^{n-1}) d\theta}
 \end{equation}
@@ -679,47 +740,74 @@ EM 算法是一种迭代算法，用于含有\textbf{隐变量 (Latent Variables
     \end{equation}
 \end{itemize}
 
-\subsubsection{2. EM 算法在 GMM 中的应用}
+\subsubsection{2. EM 算法在高斯混合模型 (GMM) 中的应用}
 
-这是 EM 算法最常见的应用场景。
-假设观测数据 $X = \{x_1, \dots, x_N\}$ 由 $K$ 个高斯分布混合生成。
+\paragraph{A. 什么是 GMM 与 隐变量？}
+
+\textbf{高斯混合模型 (GMM)} 是指由 $K$ 个高斯分布（Gaussian Distributions）线性叠加而成的概率模型。其概率密度函数定义为：
 \begin{equation}
     p(x) = \sum_{k=1}^K \pi_k \mathcal{N}(x | \mu_k, \Sigma_k)
 \end{equation}
-其中参数 $\theta = \{ \pi_k, \mu_k, \Sigma_k \}_{k=1}^K$。
+其中：
+\begin{itemize}
+    \item $\pi_k$ 是\textbf{混合系数}（Mixing Coefficient），且满足 $\sum \pi_k = 1, \pi_k \ge 0$。
+    \item $\mathcal{N}(x | \mu_k, \Sigma_k)$ 是第 $k$ 个高斯分量（Component）。
+\end{itemize}
 
-\paragraph{E步：计算响应度 (Responsibility)}
-计算样本 $x_n$ 由第 $k$ 个高斯分量生成的后验概率 $\gamma(z_{nk})$：
+\textbf{隐变量 (Latent Variable) 是什么？} \\
+在 GMM 的生成过程中，我们可以想象存在一个“上帝掷骰子”的过程：
+\begin{enumerate}
+    \item 这是一个 $K$ 面骰子。上帝首先根据概率 $\pi$ 掷出骰子，决定选择第 $k$ 个高斯分布。这个选择的结果就是\textbf{隐变量}，记为 $z$（通常用 one-hot 向量表示）。
+    \item 既然选定了第 $k$ 个分布，就从 $\mathcal{N}(\mu_k, \Sigma_k)$ 中采样生成观测数据 $x$。
+\end{enumerate}
+\textbf{为什么它是“隐”的？} \\
+因为我们只能观测到最终的数据 $x$（比如班里学生的身高），但我们不知道这个 $x$ 具体是由哪个分布生成的（不知道该学生具体属于哪个班级）。
+EM 算法的目标就是：推断每个数据 $x$ 来自哪个分布（E步），并据此反推这些分布的参数（M步）。
+
+\paragraph{B. EM 算法求解步骤}
+
+假设观测数据 $X = \{x_1, \dots, x_N\}$，模型参数为 $\theta = \{ \pi_k, \mu_k, \Sigma_k \}_{k=1}^K$。
+
+\textbf{1. E步：计算响应度 (Responsibility)} \\
+这一步相当于我们在做“软分类”。我们需要计算在当前参数下，第 $n$ 个观测数据 $x_n$ \textbf{属于第 $k$ 个高斯分量}的后验概率，记为 $\gamma(z_{nk})$：
+
 \begin{equation}
-    \gamma(z_{nk}) = \frac{\pi_k \mathcal{N}(x_n | \mu_k, \Sigma_k)}{\sum_{j=1}^K \pi_j \mathcal{N}(x_n | \mu_j, \Sigma_j)}
+    \gamma(z_{nk}) = P(z_k=1 | x_n) = \frac{\overbrace{\pi_k \mathcal{N}(x_n | \mu_k, \Sigma_k)}^{\text{分量k产生该数据的可能性}}}{\sum_{j=1}^K \pi_j \mathcal{N}(x_n | \mu_j, \Sigma_j)}
 \end{equation}
-这代表了第 $k$ 个高斯分量对第 $n$ 个样本的“责任”大小。
 
-\paragraph{M步：参数更新}
-利用 E 步得到的 $\gamma(z_{nk})$ 对参数进行加权更新。
+\textit{直观理解}：如果 $x_n$ 离第 $k$ 个高斯中心的距离 $\mu_k$ 很近，那么该分量对这个点的“响应度” $\gamma(z_{nk})$ 就会很高（接近1）；反之则接近0。
 
-首先定义第 $k$ 个分量的\textbf{有效样本数} $N_k$：
+\textbf{2. M步：参数更新} \\
+既然我们不知道每个点确切属于哪个组，我们就用 E 步算出的“响应度”作为权重，来对参数进行加权更新。
+
+首先定义第 $k$ 个分量的\textbf{有效样本总数} $N_k$：
 \begin{equation}
     N_k = \sum_{n=1}^N \gamma(z_{nk})
 \end{equation}
+\textit{注：这相当于把所有数据点分给第 $k$ 类的那部分“份额”加起来。}
 
 更新公式如下：
-\begin{enumerate}
-    \item \textbf{更新均值}（加权平均）：
+
+\begin{itemize}
+    \item \textbf{更新均值 $\mu_k$}（加权平均中心）：
     \begin{equation}
         \mu_k^{new} = \frac{1}{N_k} \sum_{n=1}^N \gamma(z_{nk}) x_n
     \end{equation}
-    
-    \item \textbf{更新协方差}（加权协方差）：
+    \textit{解释：谁对第 $k$ 类响应度高，谁就在计算中心时拥有更大的话语权。}
+
+    \item \textbf{更新协方差 $\Sigma_k$}（加权离散程度）：
     \begin{equation}
         \Sigma_k^{new} = \frac{1}{N_k} \sum_{n=1}^N \gamma(z_{nk}) (x_n - \mu_k^{new})(x_n - \mu_k^{new})^T
     \end{equation}
     
-    \item \textbf{更新混合系数}：
+    \item \textbf{更新混合系数 $\pi_k$}（该类的比重）：
     \begin{equation}
         \pi_k^{new} = \frac{N_k}{N}
     \end{equation}
-\end{enumerate}
+    \textit{解释：第 $k$ 类的有效样本数占总样本数的比例。}
+\end{itemize}
+
+重复 E 步和 M 步直到似然函数收敛。
 
 \subsubsection{3. EM 算法总结}
 \begin{itemize}
@@ -728,1089 +816,1271 @@ EM 算法是一种迭代算法，用于含有\textbf{隐变量 (Latent Variables
     \item \textbf{与 K-Means 的关系}：K-Means 可以看作是 GMM 的一种特例（硬分配，协方差矩阵为单位阵且趋于0时）。
 \end{itemize}
 
-\subsection{隐马尔可夫模型 (HMM)}
+\subsection{隐马尔可夫模型 (HMM) 详解与实例}
+
+HMM 是处理序列数据的统计模型。为了理解它，我们使用一个经典的\textbf{“盒子摸球”}模型作为贯穿始终的例子。
+
+\subsubsection{1. 具体的模型定义与矩阵实例}
+
+假设我们要模拟一个摸球实验：
 \begin{itemize}
-    \item \textbf{定义}：观测序列由一个不可见的马尔可夫链生成。包含状态变量 $Z_t$（隐变量）和观测变量 $X_t$。
-    \item \textbf{三个基本问题}：
-    \begin{enumerate}
-        \item \textbf{评估问题}：给定模型，计算观测序列出现的概率 $P(O|\lambda)$ —— 求解：\textbf{前向/后向算法}。
-        \item \textbf{解码问题}：给定模型和观测序列，推断最可能的隐状态序列 $Z^*$ —— 求解：\textbf{维特比算法 (Viterbi)}。
-        \item \textbf{学习问题}：给定观测序列，估计模型参数 $\lambda=(\pi, A, B)$ —— 求解：\textbf{Baum-Welch算法}（即EM算法在HMM中的应用）。
-    \end{enumerate}
+    \item \textbf{隐状态 (Hidden States)} $Q = \{1, 2, 3\}$：我们有 3 个盒子，分别编号 1, 2, 3。我们看不见手里拿的是哪个盒子。
+    \item \textbf{观测值 (Observations)} $V = \{红, 白\}$：我们每次只能看到从盒子里摸出来的球的颜色。
 \end{itemize}
 
-\newpage
-\section{非参数法 \small{(3学时 张燕明)}}
+一个完整的 HMM 模型 $\lambda = (\pi, A, B)$ 由以下具体参数定义：
 
-\subsection{密度估计}
-\begin{itemize}
-    \item \textbf{基本原理}：假设概率密度 $p(x)$ 平滑，在点 $x$ 附近的小区域 $R$（体积为 $V$）内，若落入 $k$ 个样本，则密度可估计为：
-    \begin{equation}
-        p(x) \approx \frac{k}{nV}
-    \end{equation}
-    其中 $n$ 为样本总数。
-    \item \textbf{收敛条件}：为了使估计收敛于真实密度，当 $n \to \infty$ 时需满足：
-    \begin{enumerate}
-        \item $V_n \to 0$ （区域越来越小，保证分辨率）
-        \item $k_n \to \infty$ （区域内样本无限多，保证稳定性）
-        \item $k_n/n \to 0$ （区域内样本占比趋于0）
-    \end{enumerate}
-    \item \textbf{两种策略}：
-    \begin{itemize}
-        \item \textbf{Parzen窗}：固定体积 $V_n$，求 $k_n$。
-        \item \textbf{K近邻估计}：固定样本数 $k_n$，求体积 $V_n$。
-    \end{itemize}
-\end{itemize}
-
-\subsection{Parzen窗方法}
-\begin{itemize}
-    \item \textbf{定义}：利用固定的窗函数（Window Function）$\varphi(u)$ 来估计密度。
-    \begin{equation}
-        p_n(x) = \frac{1}{n} \sum_{i=1}^n \frac{1}{V_n} \varphi\left(\frac{x-x_i}{h_n}\right)
-    \end{equation}
-    其中 $V_n = h_n^d$， $h_n$ 为窗宽。
-    \item \textbf{窗函数}：
-    \begin{itemize}
-        \item \textbf{方窗}：$\varphi(u)$ 为单位超立方体内的指示函数。
-        \item \textbf{高斯窗}：$\varphi(u)$ 为标准正态分布密度函数（更平滑）。
-    \end{itemize}
-    \item \textbf{窗宽 $h_n$ 的影响}：
-    \begin{itemize}
-        \item $h_n$ 过大：分辨率低，欠拟合（平滑过度）。
-        \item $h_n$ 过小：波动大，过拟合（呈现“毛刺”）。
-    \end{itemize}
-\end{itemize}
-
-\subsection{K近邻估计 (k-NN Estimation)}
-\begin{itemize}
-    \item \textbf{方法}：以 $x$ 为中心生长区域，直到包含第 $k_n$ 个最近邻样本为止，此时的体积为 $V_n$。
-    \item \textbf{估计公式}：
-    \begin{equation}
-        p_n(x) = \frac{k_n}{n V_n}
-    \end{equation}
-    \item \textbf{特点}：在密度高的区域 $V_n$ 小（分辨率高），在密度低的区域 $V_n$ 大（稳定性好）。但估计出的概率密度函数的积分为 $\infty$，非严格密度函数。
-\end{itemize}
-
-\subsection{最近邻分类器 (Nearest Neighbor Classifier)}
-\begin{itemize}
-    \item \textbf{决策规则}：将测试样本 $x$ 分类为与其\textbf{最近}的训练样本 $x'$ 相同的类别。即：
-    \[ \text{Decide } \omega_m \text{ if } x' \in \omega_m \]
-    这是 $k=1$ 时的特例。
-    \item \textbf{错误率分析}：
-    设 $P^*$ 为贝叶斯错误率（理论最小值），$P$ 为最近邻法（1-NN）的渐进错误率（$n \to \infty$）。
-    \begin{equation}
-        P^* \le P \le P^* \left( 2 - \frac{c}{c-1}P^* \right) \le 2P^*
-    \end{equation}
-    \textbf{结论}：当样本无限多时，最近邻分类器的错误率\textbf{不会超过贝叶斯错误率的2倍}。
-\end{itemize}
-
-\subsection{K近邻分类器的改进}
-\begin{itemize}
-    \item \textbf{k-NN分类器}：
-    选取前 $k$ 个最近邻样本，采用\textbf{投票法}（Majority Voting）决定类别。可提高对噪声的鲁棒性。
-    \item \textbf{快速搜索算法}：
-    为了解决计算量大（需计算与所有训练样本的距离）的问题：
-    \begin{itemize}
-        \item \textbf{部分距离法}：计算距离时若部分维度的累积距离已超过当前最小值，则提前终止。
-        \item \textbf{搜索树 (KD-Tree)}：利用树结构组织样本，平均复杂度降至 $O(\log n)$。
-        \item \textbf{剪辑与压缩 (Editing \& Condensing)}：剔除边界模糊或被同类包围的冗余样本，减少存储量和计算量。
-    \end{itemize}
-\end{itemize}
-
-\subsection{距离度量}
-\begin{itemize}
-    \item \textbf{常见距离}：
-    \begin{itemize}
-        \item \textbf{欧氏距离}：$L_2$ 范数。
-        \item \textbf{曼哈顿距离}：$L_1$ 范数。
-        \item \textbf{马氏距离 (Mahalanobis Distance)}：考虑了特征间的相关性。
-        \begin{equation}
-            d(x,y) = \sqrt{(x-y)^T \Sigma^{-1} (x-y)}
-        \end{equation}
-    \end{itemize}
-    \item \textbf{切距离 (Tangent Distance)}：
-    用于解决具有变换不变性（如旋转、缩放）的识别问题。用线性子空间（切平面）近似变换流形，计算点到子空间的距离。
-    \item \textbf{度量学习 (Metric Learning)}：
-    利用先验知识（如 Must-link 和 Cannot-link 约束）学习一个新的距离度量矩阵 $A$，使得同类样本距离更近，异类样本距离更远。
-\end{itemize}
-
-\newpage
-\section{线性分类器设计 \small{(3学时 张燕明)}}
-
-\subsection{引言}
-\begin{itemize}
-    \item \textbf{生成模型 (Generative Models)}：
-    先估计类条件概率密度 $p(x|\omega_i)$ 和先验概率 $P(\omega_i)$，再利用贝叶斯公式求后验概率。
-    \item \textbf{判别模型 (Discriminative Models)}：
-    不估计概率密度，直接学习后验概率 $P(\omega_i|x)$ 或直接学习判别函数 $g_i(x)$ 的参数。线性分类器属于此类。
-    \item \textbf{基本假设}：
-    假设判别函数 $g(x)$ 具有特定的函数形式（如线性函数），利用训练样本集确定函数中的参数。
-\end{itemize}
-
-\subsection{线性判别函数与决策面}
-\begin{itemize}
-    \item \textbf{两类问题}：
-    \begin{itemize}
-        \item \textbf{定义}：$g(x) = w^T x + w_0$。其中 $w$ 为权重向量，$w_0$ 为偏置（阈值）。
-        \item \textbf{决策规则}：
-        \begin{equation}
-            \begin{cases}
-            g(x) > 0 \Rightarrow x \in \omega_1 \\
-            g(x) < 0 \Rightarrow x \in \omega_2 \\
-            g(x) = 0 \Rightarrow \text{不定 (决策边界)}
-            \end{cases}
-        \end{equation}
-        \item \textbf{几何性质}：
-        \begin{itemize}
-            \item \textbf{决策面}：$H: g(x) = 0$ 是一个超平面，法向量为 $w$。
-            \item \textbf{距离}：任意样本 $x$ 到超平面 $H$ 的代数距离为 $r = \frac{g(x)}{\|w\|}$。
-            \item \textbf{原点距离}：原点到超平面的距离为 $\frac{w_0}{\|w\|}$。
-        \end{itemize}
-    \end{itemize}
-    
-    \item \textbf{多类问题}：
-    \begin{itemize}
-        \item \textbf{一对其余 (One-vs-All)}：构造 $c$ 个两类分类器。存在“不确定区域”。
-        \item \textbf{一对一 (One-vs-One)}：构造 $c(c-1)/2$ 个两类分类器，通过投票决策。也存在不确定区域。
-        \item \textbf{线性机器 (Linear Machine)}：
-        定义 $c$ 个判别函数 $g_i(x) = w_i^T x + w_{i0}$，决策规则为取最大值：
-        \[ x \in \omega_i \quad \text{if } g_i(x) > g_j(x), \forall j \neq i \]
-        这种方法将特征空间划分为 $c$ 个凸区域。
-    \end{itemize}
-\end{itemize}
-
-\subsection{广义线性判别函数}
-通过非线性映射 $\varphi(x)$ 将低维线性不可分数据映射到高维空间，使其在高维空间线性可分。
-\begin{itemize}
-    \item \textbf{齐次增广表示}：
-    为了简化计算，通常将偏置 $w_0$ 纳入权重向量。
-    \begin{equation}
-        y = [1, x_1, \dots, x_d]^T, \quad a = [w_0, w_1, \dots, w_d]^T \quad \Rightarrow \quad g(x) = a^T y
-    \end{equation}
-    此时决策面必然通过增广空间的原点。
-    \item \textbf{二次判别函数}：
-    $g(x) = \sum w_{ii} x_i^2 + \sum \sum w_{ij} x_i x_j + \sum w_i x_i + w_0$。
-    通过映射 $y = [1, x_1, \dots, x_d, x_1^2, x_1 x_2, \dots]^T$，可将其转化为线性形式 $a^T y$。
-    \item \textbf{维数灾难}：随着阶数增加，映射后的维数呈指数级爆炸，计算复杂度急剧上升。
-\end{itemize}
-
-\subsection{感知准则函数 (Perceptron)}
-假设样本集线性可分。为了统一处理，对 $\omega_2$ 类的样本进行\textbf{规范化 (Normalization)}：$y \leftarrow -y$。
-此时目标变为寻找 $a$，使得对所有样本 $y_i$，均有 $a^T y_i > 0$。
-
-\begin{itemize}
-    \item \textbf{准则函数}：
-    感知器只关注被\textbf{错分}的样本集合 $\mathcal{Y}$ (即满足 $a^T y \le 0$ 的样本)。
-    \begin{equation}
-        J_p(a) = \sum_{y \in \mathcal{Y}} (-a^T y)
-    \end{equation}
-    \item \textbf{梯度下降}：$\nabla J_p = \sum_{y \in \mathcal{Y}} (-y)$。
-    \item \textbf{批处理感知器算法 (Batch Perceptron)}：
-    \begin{equation}
-        a_{k+1} = a_k + \eta_k \sum_{y \in \mathcal{Y}_k} y
-    \end{equation}
-    \item \textbf{单样本感知器算法 (Fixed-Increment Single-Sample)}：
-    每次只处理一个错分样本 $y^k$：
-    \begin{equation}
-        a_{k+1} = a_k + y^k
-    \end{equation}
-    \item \textbf{收敛性定理}：若样本线性可分，固定增量的感知器算法必在\textbf{有限步}内收敛。
-\end{itemize}
-
-\subsection{松驰方法 (Relaxation Procedures)}
-感知器要求严格分类正确 ($a^T y > 0$)，松弛方法引入间隔 $b$ ($a^T y \ge b$)，并使用平方误差来平滑目标函数。
-
-\begin{itemize}
-    \item \textbf{准则函数 (SQ Error with Margin)}：
-    \begin{equation}
-        J_r(a) = \frac{1}{2} \sum_{y \in \mathcal{Y}} \frac{(a^T y - b)^2}{\|y\|^2}
-    \end{equation}
-    其中 $\mathcal{Y}$ 是满足 $a^T y \le b$ 的错分样本集。
-    \item \textbf{单样本更新规则}：
-    \begin{equation}
-        a_{k+1} = a_k + \eta \frac{b - a_k^T y^k}{\|y^k\|^2} y^k
-    \end{equation}
-    其中 $0 < \eta < 2$。
-    \begin{itemize}
-        \item $\eta = 1$：一步将 $a$ 投影到满足 $a^T y^k = b$ 的超平面上。
-        \item $\eta < 1$：欠松弛（Under-relaxation）。
-        \item $\eta > 1$：超松弛（Over-relaxation）。
-    \end{itemize}
-\end{itemize}
-
-\subsection{线性最小二乘方法 (MSE)}
-将不等式求解 $a^T y_i > 0$ 转化为等式求解 $a^T y_i = b_i$。
-定义矩阵 $Y \in \mathbb{R}^{n \times (d+1)}$，目标是解方程组 $Ya = b$。
-
-\begin{itemize}
-    \item \textbf{MSE 准则函数}：
-    \begin{equation}
-        J_s(a) = \|Ya - b\|^2 = \sum_{i=1}^n (a^T y_i - b_i)^2
-    \end{equation}
-    \item \textbf{伪逆解 (Pseudo-inverse Solution)}：
-    令 $\nabla J_s = 0$，得解析解：
-    \begin{equation}
-        a = (Y^T Y)^{-1} Y^T b = Y^\dagger b
-    \end{equation}
-    \item \textbf{LMS 算法 (Widrow-Hoff)}：
-    为了避免计算矩阵的逆，使用随机梯度下降（SGD）：
-    \begin{equation}
-        a_{k+1} = a_k + \eta_k (b_k - a_k^T y^k) y^k
-    \end{equation}
-    注意：MSE 追求均方误差最小，其解\textbf{不一定}位于线性可分区域内（对离群点敏感）。
-\end{itemize}
-
-\paragraph{Ho-Kashyap 算法：}
-MSE 方法中 $b$ 是人为固定的（如全1），这限制了灵活性。Ho-Kashyap 算法同时优化 $a$ 和 $b$（要求 $b > 0$）。
-\begin{enumerate}
-    \item 目标：最小化 $J_s(a, b) = \|Ya - b\|^2$，约束 $b > 0$。
-    \item 迭代步骤：
-    \begin{itemize}
-        \item 固定 $b$，更新 $a$：$a = Y^\dagger b$
-        \item 固定 $a$，更新 $b$：$b_{k+1} = b_k + 2\eta (e_k + |e_k|)$，其中 $e_k = Ya - b$。
-    \end{itemize}
-    \item 特点：如果问题线性可分，该算法保证收敛；如果不可分，会给出指示（误差 $e$ 不为零但无法继续下降）。
-\end{enumerate}
-
-\subsection{多类线性判别函数}
-\begin{itemize}
-    \item \textbf{MSE 的多类扩展}：
-    定义 $W \in \mathbb{R}^{(d+1) \times c}$，利用 One-hot 编码将标签转化为目标向量 $z_i \in \{0, 1\}^c$。
-    目标函数：$\min_W \sum \|W^T x_i - z_i\|^2$。
-    \item \textbf{Kesler 构造法}：
-    将多类分类问题转化为一个高维空间中的两类分类问题。
-    对于属于 $\omega_1$ 类的样本 $x$，构造 $c-1$ 个增广样本，使得多类判别条件 $w_1^T x > w_j^T x$ 转化为 $a^T \eta_{1j} > 0$。
-    \item \textbf{逻辑回归 (Logistic Regression)}：
-    虽然名字叫回归，实为分类。利用 Sigmoid 函数 $\sigma(z) = \frac{1}{1+e^{-z}}$ 输出后验概率。
-    \begin{equation}
-        P(\omega_1 | x) = \frac{1}{1 + \exp(-a^T x)}
-    \end{equation}
-    \textbf{Softmax 回归}（多类情形）：
-    \begin{equation}
-        P(\omega_i | x) = \frac{\exp(w_i^T x)}{\sum_{j=1}^c \exp(w_j^T x)}
-    \end{equation}
-    通常使用\textbf{最大似然估计 (MLE)} 和梯度上升法进行训练。
-\end{itemize}
-
-\begin{algorithm}[H]
-    \caption{批处理感知器算法 (Batch Perceptron)}
-    \begin{algorithmic}[1]
-    \Require 规范化增广样本集 $Y=\{y_1, \dots, y_n\}$, 学习率 $\eta$
-    \Ensure 权向量 $a$
-    \State 初始化 $a_0$, $k \gets 0$
-    \Repeat
-        \State $Y_k \gets \emptyset$ \Comment{初始化错分样本集}
-        \For{$i = 1 \to n$}
-            \If{$a_k^T y_i \le 0$}
-                \State $Y_k \gets Y_k \cup \{y_i\}$
-            \EndIf
-        \EndFor
-        \State $a_{k+1} \gets a_k + \eta \sum_{y \in Y_k} y$ \Comment{梯度下降更新}
-        \State $k \gets k + 1$
-    \Until{$Y_k = \emptyset$}
-    \State \Return $a_k$
-    \end{algorithmic}
-\end{algorithm}
-
-\newpage
-\section{神经网络和深度学习 \small{(9学时 张燕明)}}
-
-\subsection{人工神经网络发展历程}
-\begin{itemize}
-    \item \textbf{第一阶段：萌芽期 (1940s - 1960s)}
-    \begin{itemize}
-        \item 1943年，McCulloch 和 Pitts 提出 MP 模型，是首个神经元数学模型，利用阈值逻辑模拟神经冲动。
-        \item 1949年，Hebb 提出 Hebb 学习规则（“Fire together, wire together”）。
-        \item 1958年，Rosenblatt 提出 感知器 (Perceptron)，掀起第一次高潮，能解决线性分类问题。
-        \item 1969年，Minsky 和 Papert 出版《Perceptrons》，证明感知器无法解决 异或 (XOR) 等线性不可分问题，导致神经网络研究进入第一个寒冬。
-    \end{itemize}
-    \item \textbf{第二阶段：复兴期 (1980s - 1990s)}
-    \begin{itemize}
-        \item 1982年，Hopfield 提出 Hopfield 网络，引入能量函数，不仅具备联想记忆功能，还解决了 TSP 等优化问题。
-        \item 1986年，Rumelhart, Hinton 等人重新提出 误差反向传播 (BP) 算法，有效解决了多层网络的训练问题，掀起第二次高潮。
-        \item 1990年代中期，随着 SVM（支持向量机）等统计学习方法的兴起（数学理论更完备），神经网络研究再次进入低谷。
-    \end{itemize}
-    \item \textbf{第三阶段：爆发期 (Deep Learning, 2006s - 至今)}
-    \begin{itemize}
-        \item 2006年，Hinton 提出 深度置信网络 (DBN) 和“逐层预训练 + 微调”的策略，开启了深度学习时代。
-        \item 2012年，AlexNet 在 ImageNet 图像分类竞赛中以显著优势夺冠，深度学习在计算机视觉领域全面爆发。
-        \item 此后，CNN、RNN、Transformer、GAN、GNN 等模型层出不穷，在语音、NLP、生成模型等领域取得突破。
-    \end{itemize}
-\end{itemize}
-
-\subsection{人工神经网络基础}
-\begin{itemize}
-    \item \textbf{MP 神经元模型}：
-    $$ y = f\left( \sum_{i=1}^n w_i x_i - \theta \right) = f(w^T x + b) $$
-    其中 $x$ 是输入，$w$ 是连接权重，$\theta$ 是阈值（偏置 $b=-\theta$），$f(\cdot)$ 是激活函数。
-    \item \textbf{激活函数 (Activation Functions)}：
-    \begin{itemize}
-        \item \textbf{Sigmoid}: $f(x) = \frac{1}{1+e^{-x}}$，将输出压缩到 $(0,1)$，可解释为概率。缺点：易饱和导致\textbf{梯度消失}，非零中心化。
-        \item \textbf{Tanh}: $f(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$，输出范围 $(-1, 1)$，零中心化，但仍有梯度消失问题。
-        \item \textbf{ReLU (Rectified Linear Unit)}: $f(x) = \max(0, x)$。优点：计算简单，正区间无梯度消失，加速收敛。缺点：Dead ReLU 问题（负区间梯度为0）。
-        \item \textbf{Leaky ReLU / PReLU}: 在负区间引入小斜率，解决 Dead ReLU 问题。
-    \end{itemize}
-\end{itemize}
-
-\subsection{单层前馈神经网络 (Perceptron)}
-\begin{itemize}
-    \item \textbf{定义}：只有输入层和输出层，没有隐含层。
-    \item \textbf{几何意义}：在输入空间定义一个超平面 $w^T x + b = 0$ 将数据分为两类。
-    \item \textbf{感知器收敛定理}：若训练数据是\textbf{线性可分}的，则感知器学习算法必在有限步内收敛于一个可行解。若不可分，则会震荡。
-    \item \textbf{局限性}：无法解决 XOR 问题（线性不可分）。
-\end{itemize}
-
-\subsection{多层感知器与误差反向传播算法 (MLP \& BP)}
-\begin{itemize}
-    \item \textbf{万有逼近定理 (Universal Approximation)}：
-    只要有足够多的隐含层神经元，单隐层的前馈神经网络可以以任意精度逼近任意连续函数。
-    \item \textbf{BP 算法推导}：
-    基于链式法则 (Chain Rule)。
-    \begin{enumerate}
-        \item \textbf{前向传播}：信号从输入层经隐含层传向输出层，计算误差 $E$。
-        \item \textbf{反向传播}：将误差 $E$ 对权重的梯度 $\frac{\partial E}{\partial w}$ 从输出层向输入层反向传播。
-        \item \textbf{权重更新}：沿梯度负方向调整权重 $\Delta w = -\eta \frac{\partial E}{\partial w}$。
-    \end{enumerate}
-    \item \textbf{误差项 $\delta$}：
-    \begin{itemize}
-        \item 输出层节点 $j$：$\delta_j = (d_j - y_j) f'(net_j)$
-        \item 隐层节点 $i$：$\delta_i = f'(net_i) \sum_k \delta_k w_{ki}$ （利用后一层的误差加权求和）。
-    \end{itemize}
-\end{itemize}
-
-\subsection{BP算法讨论与优化}
-\begin{itemize}
-    \item \textbf{学习模式}：
-    \begin{itemize}
-        \item \textbf{批量学习 (Batch Learning)}：利用所有样本计算总梯度后更新。方向准确，但计算量大，易陷入局部极小。
-        \item \textbf{随机梯度下降 (SGD)}：每输入一个样本就更新一次。计算快，利于跳出局部极小，但震荡剧烈。
-        \item \textbf{小批量学习 (Mini-batch)}：折中方案，如 Batch size=32, 64。深度学习中最常用。
-    \end{itemize}
-    \item \textbf{常见问题与对策}：
-    \begin{itemize}
-        \item \textbf{局部极小值 (Local Minima)}：
-        \begin{itemize}
-            \item 引入 动量项 (Momentum)：$\Delta w(t) = -\eta \nabla E + \alpha \Delta w(t-1)$，利用惯性加速收敛并冲过浅坑。
-            \item 随机初始化权重、添加随机噪声。
-        \end{itemize}
-        \item \textbf{平坦区 (Plateau)}：梯度接近0，收敛慢。对策：使用自适应学习率算法（如 AdaGrad, RMSProp, Adam）。
-        \item \textbf{过拟合 (Overfitting)}：
-        \begin{itemize}
-            \item 早停 (Early Stopping)：验证集误差不再下降时停止。
-            \item 正则化 (Weight Decay)：在损失函数加入 $L_2$ 范数 $\lambda \|w\|^2$。
-            \item Dropout：训练时随机“关闭”一部分神经元，测试时全开（相当于集成学习）。
-            \item 数据增强 (Data Augmentation)：旋转、裁剪、加噪等。
-        \end{itemize}
-        \item \textbf{梯度消失/爆炸}：
-        \begin{itemize}
-            \item 使用 ReLU 激活函数。
-            \item Batch Normalization (BN)：对每层输入做归一化，加速训练，缓解梯度问题。
-            \item ResNet 残差连接。
-        \end{itemize}
-    \end{itemize}
-\end{itemize}
-
-\subsection{反馈神经网络 (Hopfield Network)}
-\begin{itemize}
-    \item \textbf{特点}：网络中存在反馈回路，是一个动力学系统。系统状态随时间演化，最终稳定在吸引子 (Attractor)。
-    \item \textbf{能量函数 (Energy Function)}：
-    $$ E = -\frac{1}{2} \sum_{i \neq j} w_{ij} x_i x_j - \sum_i \theta_i x_i $$
-    网络演化过程中能量单调递减 ($dE/dt \le 0$)，最终达到极小值（稳定状态）。
-    \item \textbf{应用}：
-    \begin{itemize}
-        \item 联想记忆 (Associative Memory)：部分/噪声输入能恢复出完整的记忆模式（内容寻址）。
-        \item 优化计算：如求解 TSP 旅行商问题（将目标函数映射为网络能量函数）。
-    \end{itemize}
-\end{itemize}
-
-\subsection{径向基函数网络 (RBF)}
-\begin{itemize}
-    \item \textbf{Cover 定理}：将低维空间的非线性可分模式映射到高维空间，它们变成线性可分的概率将趋于1。
-    \item \textbf{结构}：输入层 $\to$ 隐层（非线性映射） $\to$ 输出层（线性组合）。
-    \item \textbf{径向基函数}：隐层采用高斯函数 $\phi(x) = \exp(-\frac{\|x-c\|^2}{2\sigma^2})$，具有局部响应特性。
-    \item \textbf{训练策略}：
-    \begin{enumerate}
-        \item 无监督学习确定中心 $c_i$（如 K-Means 聚类）。
-        \item 监督学习确定输出层权重 $w_i$（即线性回归，有解析解）。
-    \end{enumerate}
-    \item \textbf{正则化网络}：在 RBF 损失函数中引入平滑项，即 Tikhonov 正则化。
-\end{itemize}
-
-\subsection{自组织映射 (SOM)}
-\begin{itemize}
-    \item \textbf{原理}：基于大脑皮层的侧抑制现象，是一种无监督竞争式学习。
-    \item \textbf{目标}：将高维输入空间映射到低维（通常2D）离散网格，且保持拓扑结构不变（相似的输入映射到邻近的神经元）。
-    \item \textbf{算法流程}：
-    \begin{enumerate}
-        \item 竞争：找到与输入 $x$ 距离最近的获胜神经元 (Winner)。
-        \item 合作：定义获胜神经元的邻域，邻域内的神经元也被激活。
-        \item 更新：$w_j(t+1) = w_j(t) + \eta(t) h_{j,win}(t) (x - w_j(t))$，拉动权重向量向输入靠近。
-    \end{enumerate}
-    \item \textbf{应用}：特征降维、聚类、数据可视化。
-\end{itemize}
-
-\subsection{深度学习简介}
-\begin{itemize}
-    \item \textbf{浅层 vs 深层}：
-    \begin{itemize}
-        \item 浅层模型（如 SVM, 单隐层 MLP）：人工设计特征 + 浅层分类器。
-        \item 深层模型：自动学习特征 (Representation Learning)，实现“端到端 (End-to-End)”学习。
-    \end{itemize}
-    \item \textbf{核心思想}：通过多层非线性变换，从低级特征（边缘）逐层抽象出高级特征（部件、物体）。
-    \item \textbf{历史转折}：Hinton 在 2006 年提出的“贪婪逐层预训练 (Greedy Layer-wise Pre-training)”解决了深层网络难以训练的问题，尽管后来随着 ReLU 和 BN 的出现，预训练不再是必须的。
-\end{itemize}
-
-\subsection{波尔兹曼机 (Boltzmann Machine)}
-\begin{itemize}
-    \item \textbf{BM}：一种随机神经网络，神经元状态以概率更新，基于能量模型。
-    \item \textbf{受限波尔兹曼机 (RBM)}：
-    \begin{itemize}
-        \item 结构：层内无连接，层间全连接（二部图结构）。
-        \item 训练：对比散度 (Contrastive Divergence, CD-k) 算法。通过 Gibbs 采样近似梯度的计算。
-    \end{itemize}
-    \item 深度置信网络 (DBN)：由多个 RBM 堆叠而成。
-    \item 深度波尔兹曼机 (DBM)：层间无向连接的深层模型。
-\end{itemize}
-
-\subsection{自编码器 (Autoencoder)}
-\begin{itemize}
-    \item \textbf{基本原理}：$Encoder: z=f(x)$, $Decoder: \hat{x}=g(z)$。目标是最小化重构误差 $\|x - \hat{x}\|^2$。
-    \item \textbf{作用}：降维（类似非线性 PCA）、特征提取、生成模型。
-    \item \textbf{变体}：
-    \begin{itemize}
-        \item 降噪自编码器 (Denoising AE)：输入加噪声 $\tilde{x}$，强迫网络恢复原始 $x$，学习鲁棒特征。
-        \item 稀疏自编码器 (Sparse AE)：限制隐层神经元的激活率（大部分时间不激活）。
-        \item 堆叠自编码器 (Stacked AE)：逐层堆叠进行预训练。
-    \end{itemize}
-\end{itemize}
-
-\subsection{卷积神经网络 (CNN)}
-专为处理网格数据（如图像）设计。
-\begin{itemize}
-    \item \textbf{核心组件}：
-    \begin{itemize}
-        \item 卷积层 (Conv)：利用卷积核提取局部特征。特性：局部连接 (Local Connectivity) 和 权值共享 (Weight Sharing)，大幅减少参数量。
-        \item 池化层 (Pooling)：下采样（Max Pooling / Avg Pooling）。作用：减少特征图尺寸，增大感受野，提供平移不变性。
-        \item 全连接层 (FC)：用于最终的分类决策。
-    \end{itemize}
-    \item \textbf{经典架构}：
-    \begin{itemize}
-        \item LeNet-5 (1998)：早期 CNN，用于手写数字识别。
-        \item AlexNet (2012)：深度学习爆发的标志，引入 ReLU, Dropout, GPU 加速。
-        \item VGG (2014)：使用连续的 $3 \times 3$ 小卷积核代替大核，加深网络。
-        \item GoogLeNet (Inception)：引入 Inception 模块，多尺度卷积并行。
-        \item ResNet (2015)：引入残差连接 (Skip Connection)，解决了深层网络（如 152 层）的梯度消失/退化问题。
-    \end{itemize}
-\end{itemize}
-
-\subsection{循环神经网络 (RNN) 与 LSTM}
-专为序列数据（语音、文本）设计。
-\begin{itemize}
-    \item \textbf{RNN 基本结构}：
-    引入隐状态 $h_t$，当前输出不仅依赖当前输入 $x_t$，还依赖上一时刻状态 $h_{t-1}$。
-    $$ h_t = \tanh(W x_t + U h_{t-1} + b) $$
-    \item \textbf{BPTT (Backprop Through Time)}：按时间展开进行反向传播。
-    \item \textbf{问题}：长序列训练面临梯度消失或梯度爆炸，难以捕捉长距离依赖。
-    \item \textbf{LSTM (Long Short-Term Memory)}：
-    引入细胞状态 (Cell State) $C_t$ 和三个门控单元：
-    \begin{itemize}
-        \item 遗忘门 (Forget Gate) $f_t$：决定丢弃多少旧信息。
-        \item 输入门 (Input Gate) $i_t$：决定更新多少新信息。
-        \item 输出门 (Output Gate) $o_t$：决定输出多少当前状态。
-    \end{itemize}
-    \item \textbf{GRU (Gated Recurrent Unit)}：LSTM 的简化版，合并了细胞状态和隐状态。
-\end{itemize}
-
-\subsection{注意力机制与 Transformer}
-
-
-
-\begin{itemize}
-    \item \textbf{Seq2Seq 模型}：Encoder-Decoder 架构，早期使用 RNN 处理机器翻译。存在定长向量瓶颈。
-    \item \textbf{注意力机制 (Attention Mechanism)}：
-    解码时不再只看最后一个隐状态，而是通过“注意力权重”动态加权 Encoder 的所有输出，聚焦于输入序列的相关部分。
-    $$ \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V $$
-    \item \textbf{Transformer (2017)}：
-    完全抛弃 RNN/CNN，纯基于 Attention 的架构。
-    \begin{itemize}
-        \item Self-Attention (自注意力)：捕捉序列内部单词间的关联。
-        \item Multi-Head Attention：在不同子空间并行关注不同信息。
-        \item Positional Encoding：由于没有 RNN 的时序结构，需手动注入位置信息。
-    \end{itemize}
-    \item \textbf{BERT (Bi-directional Encoder Representations from Transformers)}：
-    基于 Transformer Encoder 的预训练模型。通过 Masked LM 和 Next Sentence Prediction 任务在大规模语料上预训练，再在下游任务微调，刷新了 NLP 各项记录。
-\end{itemize}
-
-\subsection{图神经网络 (GNN)}
-\begin{itemize}
-    \item \textbf{动机}：处理非欧几里得空间数据（如社交网络、分子结构、知识图谱）。
-    \item \textbf{核心机制：消息传递 (Message Passing)}。
-    节点的特征更新依赖于其邻居节点特征的聚合。
-    $$ h_v^{(l+1)} = \sigma \left( W \cdot \text{AGGREGATE} (\{h_u^{(l)}, \forall u \in \mathcal{N}(v) \}) \right) $$
-    \item \textbf{常见模型}：
-    \begin{itemize}
-        \item GCN (Graph Convolutional Network)：基于谱图理论或空间邻域聚合。
-        \item GAT (Graph Attention Network)：在聚合邻居信息时引入注意力机制，给不同邻居分配不同权重。
-    \end{itemize}
-\end{itemize}
-
-\newpage
-\section{特征提取与选择 \small{(6学时 张燕明)}}
-
-\subsection{维数灾难 (Curse of Dimensionality)}
-\begin{itemize}
-    \item \textbf{现象}：随着特征维数的增加，计算量呈指数级增长；在样本数量固定的情况下，分类器的性能通常先由差变好，达到峰值后，随着维数继续增加反而变差（Hughes 现象）。
-    \item \textbf{原因}：
-    \begin{itemize}
-        \item \textbf{数据稀疏性}：高维空间体积急剧膨胀，样本密度变得极低，为了维持同样的密度，所需样本量呈指数级增加。
-        \item \textbf{距离失效}：在高维空间中，几乎所有点对之间的距离都趋于相等，欧氏距离等度量失效。
-    \end{itemize}
-    \item \textbf{对策}：降维（特征提取与特征选择）。
-\end{itemize}
-
-\subsection{特征提取 (Feature Extraction)}
-\begin{itemize}
-    \item \textbf{定义}：通过某种数学变换，将原始高维特征空间映射到一个低维子空间，从而生成一组新的特征（原始特征的组合）。
-    \item \textbf{目的}：降低维度、去除噪声、提高计算效率、可视化。
-    \item \textbf{分类}：
-    \begin{itemize}
-        \item \textbf{无监督}：仅利用数据分布信息（如 PCA）。
-        \item \textbf{有监督}：利用类别标签信息（如 LDA）。
-    \end{itemize}
-\end{itemize}
-
-\subsection{线性方法}
-\subsubsection{1. 主成分分析 (PCA)}
-\begin{itemize}
-    \item \textbf{思想}：寻找一个正交投影方向，使得数据投影后的**方差最大**（保留最多信息）或**重构误差最小**。
-    \item \textbf{求解}：对样本协方差矩阵 $S$ 进行特征值分解。
-    \begin{equation}
-        S = \sum_{i=1}^n (x_i - \mu)(x_i - \mu)^T
-    \end{equation}
-    \begin{equation}
-        S u_i = \lambda_i u_i
-    \end{equation}
-    选取最大的 $d'$ 个特征值对应的特征向量组成投影矩阵。
-    \item \textbf{特点}：无监督，线性变换，去相关。
-\end{itemize}
-
-\subsubsection{2. 线性判别分析 (Fisher LDA)}
-\begin{itemize}
-    \item \textbf{思想}：寻找一个投影方向，使得投影后**类内散度 ($S_w$) 最小**，同时**类间散度 ($S_b$) 最大**（Fisher 准则）。
-    \item \textbf{优化目标}：
-    \begin{equation}
-        J(w) = \frac{w^T S_b w}{w^T S_w w}
-    \end{equation}
-    \item \textbf{求解}：转化为广义特征值问题 $S_b w = \lambda S_w w$。
-    \item \textbf{特点}：有监督，通过最大化类间距离和最小化类内距离来增强分类性能。受限于类别数 $c$，最多提取 $c-1$ 个特征。
-\end{itemize}
-
-\subsubsection{3. 多维缩放 (MDS)}
-\begin{itemize}
-    \item \textbf{思想}：在低维空间中保持原始高维空间样本间的距离（或相似度）不变。
-\end{itemize}
-
-\subsection{非线性方法 (流形学习)}
-针对位于非线性流形上的数据，线性方法失效。
-\begin{itemize}
-    \item \textbf{核方法 (Kernel Methods)}：
-    如 Kernel PCA (KPCA)、Kernel LDA (KDA)。利用核技巧将线性方法扩展到非线性空间。
-    \item \textbf{等距映射 (ISOMAP)}：
-    基于 MDS，但使用**测地线距离 (Geodesic Distance)** 代替欧氏距离。通过构建近邻图并计算最短路径来近似测地线距离，保持数据的全局几何结构。
-    \item \textbf{局部线性嵌入 (LLE)}：
-    \begin{itemize}
-        \item 假设数据在局部是线性的。
-        \item \textbf{步骤}：1. 寻找近邻；2. 用近邻线性重构中心点，求重构权重；3. 在低维空间保持重构权重不变，求解低维坐标。
-        \item \textbf{特点}：保持数据的局部邻域关系。
-    \end{itemize}
-    \item \textbf{拉普拉斯特征映射 (Laplacian Eigenmaps)}：
-    基于图论，通过图拉普拉斯算子的特征分解，使在高维空间相近的点在低维空间也尽可能相近。
-    \item \textbf{t-SNE}：
-    主要用于高维数据可视化，通过概率分布匹配保持局部结构。
-\end{itemize}
-
-\subsection{特征选择 (Feature Selection)}
-\begin{itemize}
-    \item \textbf{定义}：从原始特征集合中挑选出最具代表性的子集，不改变特征的原始物理意义。
-    \item \textbf{搜索策略}：
-    \begin{itemize}
-        \item \textbf{完全搜索}：如分支限界法 (Branch and Bound)，保证找到最优解，但计算量大，仅适用于单调性准则。
-        \item \textbf{启发式搜索}：
-        \begin{itemize}
-            \item \textbf{序列前向选择 (SFS)}：从空集开始，每次加入一个效果最好的特征。
-            \item \textbf{序列后向选择 (SBS)}：从全集开始，每次剔除一个最无用的特征。
-            \item \textbf{增L减R法 (L-R Selection)}：结合前向和后向，避免陷入局部极小。
-        \end{itemize}
-    \end{itemize}
-    \item \textbf{评价准则与方法分类}：
-    \begin{description}
-        \item[过滤式 (Filter)]：
-        特征选择独立于后续分类器。使用距离度量、信息增益、相关系数等统计指标评价特征重要性。速度快，通用性强，但精度可能不如包裹式。
-        \item[包裹式 (Wrapper)]：
-        直接使用后续分类器的性能（如验证集准确率）作为评价准则。精度高，但计算开销大，易过拟合。
-        \item[嵌入式 (Embedded)]：
-        特征选择与模型训练过程融合。如 LASSO ($L_1$ 正则化) 导致权重稀疏，或决策树/随机森林中的特征重要性评分。
-    \end{description}
-\end{itemize}
-
-\newpage
-\section{模型选择 \small{(3学时 张燕明)}}
-
-\subsection{模型选择原则}
-\begin{itemize}
-    \item \textbf{奥卡姆剃刀原理 (Occam's Razor)}：
-    \begin{itemize}
-        \item \textbf{核心思想}：“如无必要，勿增实体”。在性能相近的模型中，优先选择\textbf{更简单}（参数更少、结构更精简）的模型。
-        \item \textbf{应用}：正则化 (Regularization)，即在损失函数中增加惩罚项（如 $L_1, L_2$ 范数）以限制模型复杂度。
-    \end{itemize}
-    \item \textbf{没有免费的午餐定理 (No Free Lunch Theorem, NFL)}：
-    \begin{itemize}
-        \item \textbf{结论}：不存在一个在所有可能问题上都最优的算法。算法的性能是与具体问题相关的。
-        \item \textbf{推论}：脱离具体问题谈论“最好的算法”没有意义，必须结合数据的先验知识和分布特性来选择模型。
-    \end{itemize}
-\end{itemize}
-
-\subsection{模型评价标准}
-\begin{itemize}
-    \item \textbf{基本概念}：
-    \begin{itemize}
-        \item \textbf{训练误差 (Training Error)}：模型在训练集上的误差，易受过拟合影响。
-        \item \textbf{泛化误差 (Generalization Error)}：模型在未见过的测试数据上的误差，是评价模型真实性能的关键指标。
-    \end{itemize}
-    \item \textbf{样本划分与验证方法}：
-    \begin{itemize}
-        \item \textbf{留出法 (Holdout)}：将数据随机划分为训练集和测试集（如 7:3 或 8:2）。
-        \item \textbf{K折交叉验证 (K-fold Cross Validation)}：将数据均分为 $K$ 份，轮流用其中 1 份做测试，其余 $K-1$ 份做训练，取 $K$ 次结果的平均值。常用于超参数选择。
-        \item \textbf{留一法 (Leave-One-Out, LOO)}：$K=N$ 的特例，每次只留一个样本做测试。方差大，计算代价高。
-        \item \textbf{自助法 (Bootstrap)}：通过有放回采样生成训练集。约 36.8\% 的样本未被选中（Out-of-Bag），可用于测试。
-    \end{itemize}
-\end{itemize}
-
-\subsection{基于偏差和方差的分类器设计准则}
-\begin{itemize}
-    \item \textbf{误差分解}：泛化误差 = 偏差 (Bias)$^2$ + 方差 (Variance) + 噪声 (Noise)。
-    \item \textbf{偏差-方差权衡 (Bias-Variance Trade-off)}：
-    \begin{itemize}
-        \item \textbf{高偏差 (High Bias)}：模型过于简单（欠拟合），无法捕捉数据规律（如用直线拟合曲线）。
-        \item \textbf{高方差 (High Variance)}：模型过于复杂（过拟合），对训练数据的微小扰动非常敏感。
-    \end{itemize}
-    \item \textbf{设计准则}：
-    随着模型复杂度增加，偏差降低，方差升高。最优模型应位于两者之和最小的平衡点。
-    \begin{figure}[H]
-        \centering
-        % \includegraphics[width=0.5\textwidth]{bias_variance.png} % 示意图占位
-        \caption{模型复杂度与误差的关系：训练误差单调下降，测试误差呈 U 型曲线}
-    \end{figure}
-\end{itemize}
-
-\subsection{分类器集成 (Ensemble Learning)}
-\begin{itemize}
-    \item \textbf{核心思想}：“三个臭皮匠，顶个诸葛亮”。通过组合多个基分类器 (Base Classifiers) 来提升整体性能。
-    \item \textbf{有效条件}：基分类器必须具有\textbf{差异性 (Diversity)}，且精度优于随机猜测 (Error Rate < 0.5)。
-    \item \textbf{常用方法}：
-    \begin{enumerate}
-        \item \textbf{Bagging (Bootstrap Aggregating)}：
-        \begin{itemize}
-            \item 并行训练多个基分类器，每个使用不同的 Bootstrap 样本集。
-            \item 最终决策：分类任务投票 (Voting)，回归任务平均。
-            \item 代表：随机森林 (Random Forest)。主要降低\textbf{方差}。
-        \end{itemize}
-        \item \textbf{Boosting (提升方法)}：
-        \begin{itemize}
-            \item 串行训练，后续分类器重点关注前序分类器分错的样本。
-            \item 代表：Adaboost, GBDT, XGBoost。主要降低\textbf{偏差}。
-        \end{itemize}
-        \item \textbf{Stacking (层叠泛化)}：
-        \begin{itemize}
-            \item 将初级分类器的输出作为次级分类器（元学习器）的输入。
-        \end{itemize}
-    \end{enumerate}
-\end{itemize}
-
-\subsection{Adaboost学习方法及其应用}
-\textbf{Adaboost (Adaptive Boosting)} 是一种前向分步加法模型。
-
-\subsubsection{1. Adaboost 算法流程}
-输入：训练集 $T=\{(x_1, y_1), \dots, (x_N, y_N)\}, y_i \in \{-1, +1\}$。
-\begin{enumerate}
-    \item \textbf{初始化权重}：$w_{1,i} = 1/N, \quad i=1,\dots,N$。
-    \item \textbf{循环 $m = 1$ to $M$}：
-    \begin{itemize}
-        \item 基于当前权重分布 $D_m$ 训练弱分类器 $G_m(x)$。
-        \item 计算加权分类错误率：$e_m = \sum_{i=1}^N w_{m,i} I(G_m(x_i) \neq y_i)$。
-        \item 计算弱分类器权重（置信度）：
-        \begin{equation}
-            \alpha_m = \frac{1}{2} \ln \frac{1-e_m}{e_m}
-        \end{equation}
-        \item \textbf{更新样本权重}：
-        \begin{equation}
-            w_{m+1, i} = \frac{w_{m,i}}{Z_m} \exp(-\alpha_m y_i G_m(x_i))
-        \end{equation}
-        (被错分的样本权重变大，被正确分类的样本权重变小)。
-    \end{itemize}
-    \item \textbf{输出强分类器}：
-    \begin{equation}
-        F(x) = \text{sign} \left( \sum_{m=1}^M \alpha_m G_m(x) \right)
-    \end{equation}
-\end{enumerate}
-
-\subsubsection{2. 理论性质}
-Adaboost 的训练误差随弱分类器数量 $M$ 的增加呈\textbf{指数级下降}：
-$$ \text{Training Error} \le \exp(-2 \sum_{m=1}^M \gamma_m^2) $$
-其中 $\gamma_m = 0.5 - e_m$。
-
-\subsubsection{3. 应用：Viola-Jones 人脸检测}
-\begin{itemize}
-    \item \textbf{Haar 特征}：利用矩形区域的像素和差值描述边缘、纹理特征。
-    \item \textbf{积分图 (Integral Image)}：一种加速算法，使得任意矩形区域的像素和计算复杂度为 $O(1)$。
-    \item \textbf{级联结构 (Cascade)}：
-    \begin{itemize}
-        \item 将多个强分类器串联。
-        \item \textbf{早期拒绝}：前面的分类器较简单（特征少），阈值宽松，旨在快速排除大量明显的非人脸窗口（负样本）。
-        \item \textbf{后期精细}：后面的分类器较复杂，负责区分难分辨的样本。
-        \item 极大地提高了检测速度。
-    \end{itemize}
-\end{itemize}
-
-\newpage
-\section{聚类分析 \small{(6学时 张燕明)}}
-
-\subsection{基本概念}
-\begin{itemize}
-    \item \textbf{定义}：无监督学习过程，将样本集 $X$ 划分为 $K$ 个互不相交的子集（簇）$D_1, \dots, D_K$，使得同一簇内样本相似度高，不同簇间样本相似度低。
-    \item \textbf{距离度量}：
-    \begin{itemize}
-        \item Minkowski 距离 ($L_q$ norm)：$d(x,y) = (\sum |x_i - y_i|^q)^{1/q}$。($q=2$ 为欧氏距离， $q=1$ 为曼哈顿距离)。
-        \item 马氏距离 (Mahalanobis)：$d(x,y) = \sqrt{(x-y)^T \Sigma^{-1} (x-y)}$，考虑了特征间的相关性。
-        \item 余弦相似度 (Cosine)：$s(x,y) = \frac{x^T y}{\|x\| \|y\|}$，主要关注方向而非大小。
-    \end{itemize}
-\end{itemize}
-
-\subsection{K均值聚类 (K-Means)}
-\begin{itemize}
-    \item \textbf{目标函数}：最小化簇内平方误差和 (SSE)。
-    \begin{equation}
-        J = \sum_{n=1}^N \sum_{k=1}^K z_{nk} ||x_n - \mu_k||^2
-    \end{equation}
-    其中 $z_{nk} \in \{0, 1\}$ 是指示变量，表示样本 $n$ 是否属于簇 $k$。
-    \item \textbf{算法流程 (Lloyd's Algorithm)}：
-    \begin{enumerate}
-        \item \textbf{初始化}：随机选择 $K$ 个中心 $\mu_1, \dots, \mu_K$。
-        \item \textbf{分配 (Assignment)}：固定 $\mu$，更新 $z$。将每个样本分配到最近的中心。
-        \[ z_{nk} = 1 \iff k = \arg \min_j ||x_n - \mu_j||^2 \]
-        \item \textbf{更新 (Update)}：固定 $z$，更新 $\mu$。计算每个簇的新均值。
-        \[ \mu_k = \frac{\sum_{n} z_{nk} x_n}{\sum_{n} z_{nk}} \]
-        \item \textbf{迭代}：重复步骤 2-3 直至收敛（中心不再变化或目标函数下降小于阈值）。
-    \end{enumerate}
-    \item \textbf{K-Means++ 初始化}：
-    为了解决对初始值敏感的问题，K-Means++ 按照与已有中心距离的平方成正比的概率选择下一个中心，尽可能使初始中心分散。
-    \item \textbf{K值选择}：
-    \textbf{肘部法则 (Elbow Method/Knee Finding)}：绘制目标函数 $J$ 随 $K$ 变化的曲线，选择曲线出现“拐点”处的 $K$ 值。
-\end{itemize}
-
-\subsection{模糊K均值聚类 (GMM \& EM)}
-传统 K-Means 是硬分配 (Hard Assignment)，即样本只能属于一个簇。PPT 中重点介绍了基于概率的**高斯混合模型 (GMM)** 作为软聚类 (Soft Assignment) 方法。
-
-\begin{itemize}
-    \item \textbf{高斯混合模型 (GMM)}：
-    假设数据由 $K$ 个高斯分布混合生成：
-    \begin{equation}
-        p(x) = \sum_{k=1}^K \pi_k \mathcal{N}(x | \mu_k, \Sigma_k)
-    \end{equation}
-    其中 $\pi_k$ 是混合系数（先验概率），$\sum \pi_k = 1$。
-    \item \textbf{EM 算法 (Expectation-Maximization)}：
-    用于求解含有隐变量（簇标签）的极大似然估计问题。
-    \begin{itemize}
-        \item \textbf{E步 (Expectation)}：计算样本属于第 $k$ 个簇的后验概率（Responsibility）。
-        \begin{equation}
-            \gamma_k(x_n) = \frac{\pi_k \mathcal{N}(x_n | \mu_k, \Sigma_k)}{\sum_{j=1}^K \pi_j \mathcal{N}(x_n | \mu_j, \Sigma_j)}
-        \end{equation}
-        \item \textbf{M步 (Maximization)}：利用加权样本更新参数。
-        \[ \mu_k^{new} = \frac{1}{N_k} \sum_{n=1}^N \gamma_k(x_n) x_n, \quad \Sigma_k^{new} = \frac{1}{N_k} \sum_{n=1}^N \gamma_k(x_n)(x_n - \mu_k)(x_n - \mu_k)^T \]
-        其中 $N_k = \sum_{n=1}^N \gamma_k(x_n)$。
-    \end{itemize}
-    \item \textbf{与 K-Means 关系}：当 GMM 的协方差矩阵为 $\sigma^2 I$ 且 $\sigma^2 \to 0$ 时，GMM 退化为 K-Means。
-\end{itemize}
-
-\subsection{层次聚类 (Hierarchical Clustering)}
-\begin{itemize}
-    \item \textbf{策略}：
-    \begin{itemize}
-        \item \textbf{凝聚 (Agglomerative)}：自底向上，开始时每个样本是一类，每次合并距离最近的两个类。
-        \item \textbf{分裂 (Divisive)}：自顶向下，开始时所有样本是一类，每次分裂差异最大的类。
-    \end{itemize}
-    \item \textbf{簇间距离度量 (Linkage)}：
-    \begin{itemize}
-        \item \textbf{最短距离 (Single Linkage)}：$d(C_i, C_j) = \min_{x \in C_i, y \in C_j} d(x, y)$。易产生“链式效应”。
-        \item \textbf{最长距离 (Complete Linkage)}：$d(C_i, C_j) = \max_{x \in C_i, y \in C_j} d(x, y)$。倾向于产生球状簇。
-        \item \textbf{平均距离 (Average Linkage)}：所有点对距离的平均值。
-    \end{itemize}
-    \item \textbf{可视化}：使用\textbf{树状图 (Dendrogram)} 展示聚类过程，横轴代表样本，纵轴代表合并时的距离（相似度）。
-\end{itemize}
-
-\subsection{谱聚类 (Spectral Clustering)}
-基于图论的聚类方法，能够发现\textbf{非凸}形状的簇。
-
-\begin{itemize}
-    \item \textbf{基本步骤}：
-    \begin{enumerate}
-        \item \textbf{构图}：构建样本的相似度图（如 k-近邻图），得到邻接矩阵 $W$ 和度矩阵 $D$（对角阵，元素为节点度数）。
-        \item \textbf{拉普拉斯矩阵}：计算图拉普拉斯矩阵。
-        \begin{itemize}
-            \item 未归一化：$L = D - W$
-            \item 对称归一化：$L_{sym} = I - D^{-1/2} W D^{-1/2}$
-            \item 随机游走归一化：$L_{rw} = I - D^{-1} W$
-        \end{itemize}
-        \item \textbf{特征分解}：计算 $L$ 的前 $k$ 个最小特征值对应的特征向量 $u_1, \dots, u_k$。
-        \item \textbf{新特征空间}：将特征向量作为列组成矩阵 $U \in \mathbb{R}^{N \times k}$，将 $U$ 的每一行视为一个新的 $k$ 维样本 $y_i$。
-        \item \textbf{聚类}：对 $y_i$ 进行 K-Means 聚类得到最终结果。
-    \end{enumerate}
-    \item \textbf{原理}：
-    谱聚类本质上是图切割问题（如 RatioCut 或 Ncut）的松弛求解。最小化切图代价相当于让簇内连接紧密，簇间连接稀疏。
-\end{itemize}
-
-\subsection{在线聚类与竞争学习}
-\begin{itemize}
-    \item \textbf{竞争学习 (Competitive Learning)}：
-    一种在线（Online）聚类方法，样本按顺序输入，每次只更新获胜的那个原型（Winner-take-all）。
-    \[ \Delta w_{winner} = \eta (x - w_{winner}) \]
-    \item \textbf{BSAS (Basic Sequential Algorithmic Scheme)}：
-    \begin{itemize}
-        \item 按顺序处理每个样本。
-        \item 计算样本与现有簇中心的距离。
-        \item 若最小距离大于阈值 $\theta$，则生成新簇；否则归入最近簇并更新中心。
-        \item 缺点：结果依赖于样本输入顺序。
-    \end{itemize}
-\end{itemize}
-
-\subsection{集成聚类 (Ensemble Clustering)}
-\begin{itemize}
-    \item \textbf{动机}：
-    单一聚类算法对参数（如 K 值、初始化）敏感。集成聚类通过组合多个基聚类结果（Base Partitions）来提高聚类的\textbf{稳健性 (Robustness)} 和 \textbf{稳定性}。
-    \item \textbf{多样性构建}：
-    \begin{itemize}
-        \item 使用不同的聚类算法（如 K-Means + 层次 + 谱聚类）。
-        \item 使用不同的参数（如不同的 K，不同的初始化）。
-        \item 数据重采样（Bagging, Random Projection）。
-    \end{itemize}
-    \item \textbf{一致性函数 (Consensus Function)}：
-    将多个基聚类结果合并为一个最终的一致性划分（Consensus Partition），常用方法包括基于共联矩阵（Co-association Matrix）的投票法或图划分法。
-\end{itemize}
-
-\newpage
-%===========================================================
-% 第10章 支持向量机与核方法
-%===========================================================
-\section{支持向量机与核方法 \small{(6学时 向世明)}}
-
-\subsection{统计学习理论基础}
-\begin{itemize}
-    \item \textbf{核心目标}：在有限样本下寻求\textbf{结构风险最小化 (Structural Risk Minimization, SRM)}，即在保证分类精度的同时，降低模型复杂度，从而提高泛化能力。
-    \item \textbf{VC维 (VC Dimension)}：
-    \begin{itemize}
-        \item \textbf{定义}：假设空间 $H$ 能“打散 (Shatter)”的最大样本数。
-        \item \textbf{物理意义}：衡量函数集的学习能力（容量）。VC维越高，模型越复杂，越容易过拟合。
-        \item \textbf{线性模型}：$d$ 维空间中线性分类器的 VC 维为 $d+1$。
-        \item \textbf{SVM策略}：通过最大化间隔 (Margin)，实际上是在限制函数集的有效 VC 维，从而获得更好的泛化界。
-    \end{itemize}
-\end{itemize}
-
-\subsection{线性可分支持向量机 (Hard Margin SVM)}
-假设训练数据线性可分，目标是寻找最大间隔超平面。
-\begin{itemize}
-    \item \textbf{超平面方程}：$w^T x + b = 0$。
-    \item \textbf{几何间隔}：两类支持向量到超平面的距离之和，计算为 $\gamma = \frac{2}{\|w\|}$。
-    \item \textbf{原始优化问题 (Primal Problem)}：
-    \begin{equation}
-        \begin{aligned}
-        & \min_{w,b} \frac{1}{2} \|w\|^2 \\
-        & \text{s.t.} \quad y_i(w^T x_i + b) \ge 1, \quad i=1,\dots,N
-        \end{aligned}
-    \end{equation}
-    \item \textbf{支持向量}：满足 $y_i(w^T x_i + b) = 1$ 的样本点，它们决定了最终的决策边界。
-\end{itemize}
-
-\subsection{线性支持向量机 (Soft Margin SVM)}
-解决数据线性不可分或存在噪声的情况。
-\begin{itemize}
-    \item \textbf{松弛变量 (Slack Variables)}：引入 $\xi_i \ge 0$，允许样本偏离间隔边界。
-    \item \textbf{优化问题}：
-    \begin{equation}
-        \begin{aligned}
-        & \min_{w,b,\xi} \frac{1}{2} \|w\|^2 + C \sum_{i=1}^N \xi_i \\
-        & \text{s.t.} \quad y_i(w^T x_i + b) \ge 1 - \xi_i, \quad \xi_i \ge 0
-        \end{aligned}
-    \end{equation}
-    \item \textbf{惩罚参数 $C$}：
-    \begin{itemize}
-        \item $C$ 较大：对误分类惩罚重，模型趋向于硬间隔（低偏差，高方差）。
-        \item $C$ 较小：容忍更多误分，模型趋向于更宽的间隔（高偏差，低方差）。
-    \end{itemize}
-    \item \textbf{合页损失 (Hinge Loss)}：SVM 的优化目标等价于 $L_2$ 正则项 + Hinge Loss ($[1 - y_i f(x_i)]_+$)。
-\end{itemize}
-
-\subsection{对偶理论与核技巧}
-\subsubsection{对偶问题 (Dual Problem)}
-利用拉格朗日乘子法，将原始问题转化为对偶问题，便于引入核函数。
+\paragraph{(1) 初始状态分布 $\pi$ (Initial Distribution)}
+刚开始实验时，选中各个盒子的概率：
 \begin{equation}
+    \pi = \begin{bmatrix} 0.2 \\ 0.4 \\ 0.4 \end{bmatrix} 
+    \quad \text{(即：选中盒子1的概率是0.2，盒子2是0.4...)}
+\end{equation}
+
+\paragraph{(2) 状态转移矩阵 $A$ (Transition Matrix)}
+如果我们当前在由盒子 $i$ 摸球，下一次换到盒子 $j$ 的概率。这是 HMM 的核心（\textbf{马尔可夫链}）：
+\begin{equation}
+    A = \begin{bmatrix}
+    0.5 & 0.2 & 0.3 \\
+    0.3 & 0.5 & 0.2 \\
+    0.2 & 0.3 & 0.5 
+    \end{bmatrix}
+\end{equation}
+\textit{解读：} $A_{12} = 0.2$ 表示如果当前在盒子1，下一次有 0.2 的概率转移到盒子2。
+
+\paragraph{(3) 观测概率矩阵 $B$ (Emission Matrix)}
+在盒子 $j$ 中摸出某种颜色球的概率（\textbf{观测独立性}）：
+\begin{equation}
+    B = \begin{bmatrix}
+    0.5 & 0.5 \\
+    0.4 & 0.6 \\
+    0.7 & 0.3 
+    \end{bmatrix} \quad 
     \begin{aligned}
-    & \max_{\alpha} \sum_{i=1}^N \alpha_i - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j y_i y_j (x_i \cdot x_j) \\
-    & \text{s.t.} \quad \sum_{i=1}^N \alpha_i y_i = 0, \quad 0 \le \alpha_i \le C
+    &\text{列1：红色} \\
+    &\text{列2：白色}
     \end{aligned}
 \end{equation}
+\textit{解读：} $B_{21} = 0.4$ 表示在盒子2中，摸到红球的概率是 0.4。
+
+\subsubsection{2. 状态转移图 (State Transition Diagram)}
+
+上述模型可以用有向图直观表示。节点代表隐状态（盒子），边代表转移概率 $A_{ij}$。
+
+\begin{center}
+\begin{tikzpicture}[->, >=stealth, shorten >=1pt, auto, node distance=3.5cm, semithick]
+  \tikzstyle{every state}=[fill=blue!10, draw=blue!50, text=black, minimum size=1.2cm]
+
+  \node[state] (S1) {盒子 1};
+  \node[state] (S2) [right of=S1] {盒子 2};
+  \node[state] (S3) [below of=S1, xshift=1.75cm] {盒子 3};
+
+  \path 
+  (S1) edge [loop above] node {0.5} (S1)
+       edge [bend left] node {0.2} (S2)
+       edge [bend right] node [left] {0.3} (S3)
+  (S2) edge [loop above] node {0.5} (S2)
+       edge [bend left] node {0.3} (S1)
+       edge [bend left] node {0.2} (S3)
+  (S3) edge [loop below] node {0.5} (S3)
+       edge [bend right] node [right] {0.2} (S1)
+       edge [bend left] node [left] {0.3} (S2);
+       
+  \node[below=0.2cm of S1, font=\footnotesize, color=red] {P(红)=0.5};
+  \node[below=0.2cm of S2, font=\footnotesize, color=red] {P(红)=0.4};
+  \node[below=0.2cm of S3, font=\footnotesize, color=red] {P(红)=0.7};
+\end{tikzpicture}
+\end{center}
+
+\subsubsection{3. HMM 的三个核心问题推导}
+
+假设我们观测到一个序列：$O = (\text{红}, \text{白})$。
+
+\paragraph{问题一：评估 (Evaluation) - 前向算法}
+\textbf{问}：这个序列 $O=(\text{红}, \text{白})$ 发生的总概率 $P(O|\lambda)$ 是多少？\\
+\textbf{解}：我们需要累加所有可能的路径。使用前向变量 $\alpha_t(i)$。
+
+\textbf{第一步 ($t=1$)}：算出第一次摸到“红”且分别在盒子1,2,3的概率。
+\begin{equation}
+\begin{aligned}
+    \alpha_1(1) &= \pi_1 \times B_{1}(\text{红}) = 0.2 \times 0.5 = 0.10 \\
+    \alpha_1(2) &= \pi_2 \times B_{2}(\text{红}) = 0.4 \times 0.4 = 0.16 \\
+    \alpha_1(3) &= \pi_3 \times B_{3}(\text{红}) = 0.4 \times 0.7 = 0.28 
+\end{aligned}
+\end{equation}
+
+\textbf{第二步 ($t=2$)}：从 $t=1$ 的所有状态转移过来，并摸到“白”。
+以计算 $\alpha_2(1)$ 为例（即第2次在盒子1且摸到白球的概率）：
+\begin{equation}
+\begin{aligned}
+    \alpha_2(1) &= \left[ \sum_{i=1}^3 \alpha_1(i) A_{i1} \right] \times B_{1}(\text{白}) \\
+    &= (0.10 \times 0.5 + 0.16 \times 0.3 + 0.28 \times 0.2) \times 0.5 \\
+    &= (0.05 + 0.048 + 0.056) \times 0.5 = 0.154 \times 0.5 = 0.077
+\end{aligned}
+\end{equation}
+同理计算 $\alpha_2(2), \alpha_2(3)$，最后求和即为总概率。
+
+\paragraph{问题二：解码 (Decoding) - 维特比算法}
+\textbf{问}：观测到 $(\text{红}, \text{白})$，最可能背后的盒子序列是什么？是 $(1 \to 1)$ 还是 $(3 \to 2)$？\\
+\textbf{解}：我们要找一条“最强路径”。
 \begin{itemize}
-    \item \textbf{KKT条件}：
+    \item 前向算法里我们做的是 \textbf{求和 (Sum)}：$\sum \alpha_1(i) A_{ij}$。
+    \item 维特比算法里我们做的是 \textbf{取最大值 (Max)}：$\max (\delta_1(i) A_{ij})$。
+\end{itemize}
+在 $t=2$ 时，我们不看所有路径的总和，只看\textbf{哪一个上一步状态 $i$} 最容易跳到当前的 $j$。我们记录下这个“最强上家”，最后倒着找回去。
+
+\paragraph{问题三：学习 (Learning) - Baum-Welch算法}
+\textbf{问}：如果我也不知道矩阵 $A, B, \pi$ 里的数，只给你一堆红红白白的球的序列，怎么反推这些矩阵？\\
+\textbf{解}：这就是 EM 算法。
+\begin{itemize}
+    \item \textbf{E步}：先猜一组 $A, B$，算出每一步大概率是在哪个盒子里（计算 $\gamma_t(i)$ 和 $\xi_t(i,j)$）。
+    \item \textbf{M步}：根据算出来的概率，“数数”。
     \begin{itemize}
-        \item $\alpha_i = 0$：样本被正确分类且远离边界（非支持向量）。
-        \item $0 < \alpha_i < C$：样本位于间隔边界上（支持向量，$\xi_i=0$）。
-        \item $\alpha_i = C$：样本位于间隔边界内（可能被误分，支持向量，$\xi_i > 0$）。
+        \item 比如，$A_{12}$ 的新估计值 = (也就是从1跳到2的期望次数) / (在1的期望总次数)。
     \end{itemize}
 \end{itemize}
 
-\subsubsection{核技巧 (Kernel Trick)}
-通过非线性映射 $\phi(x)$ 将低维数据映射到高维特征空间。定义核函数 $K(x_i, x_j) = \phi(x_i)^T \phi(x_j)$，避免显式计算高维映射。
+\newpage
+\section{非参数法 (Non-parametric Methods) \small{(3学时 张燕明)}}
 
-\textbf{常用核函数}：
-\begin{enumerate}
-    \item \textbf{线性核 (Linear)}：$K(x, z) = x^T z$。适用于特征维数高的数据（如文本分类）。
-    \item \textbf{多项式核 (Polynomial)}：$K(x, z) = (x^T z + 1)^d$。
-    \item \textbf{高斯径向基核 (RBF)}：
+\subsection{1. 引言：为什么要用非参数法？}
+\begin{itemize}
+    \item \textbf{参数法的局限性}：
+    \begin{itemize}
+        \item 假设样本服从特定的概率分布（如高斯分布），但在实际应用中，数据的分布往往是多峰的、非对称的或未知的。
+        \item 如果假设的分布模型与真实分布不符，会导致严重的系统误差（偏差大）。
+    \end{itemize}
+    \item \textbf{非参数法的定义}：
+    \begin{itemize}
+        \item 不预先假设概率密度函数的数学形式。
+        \item \textbf{完全由数据驱动}：概率密度的形式完全由训练样本决定。
+    \end{itemize}
+    \item \textbf{核心思想}：利用样本在特征空间中的\textbf{局部密度}来估计整体概率密度。
+\end{itemize}
+
+\subsection{2. 概率密度估计的基本原理}
+\begin{itemize}
+    \item \textbf{概率与密度的关系}：
+    设概率密度为 $p(x)$，样本落在点 $x$ 附近区域 $R$ 中的概率 $P$ 为：
     \begin{equation}
-        K(x, z) = \exp\left( -\frac{\|x - z\|^2}{2\sigma^2} \right) = \exp(-\gamma \|x - z\|^2)
+        P = \int_{R} p(x') dx'
     \end{equation}
-    对应无穷维特征空间。$\gamma$ 越大，模型越复杂（越“尖”），易过拟合。
-\end{enumerate}
+    若区域 $R$ 足够小（体积为 $V$），且 $p(x)$ 平滑，则 $P \approx p(x)V$。
+    
+    \item \textbf{极大似然估计}：
+    假设 $n$ 个样本中有 $k$ 个落入区域 $R$。根据二项分布，概率 $P$ 的最大似然估计为 $\hat{P} = k/n$。
+    
+    \item \textbf{通用估计公式}：
+    \begin{equation}
+        p_n(x) = \frac{k_n/n}{V_n} \quad \text{(样本比例 / 体积)}
+    \end{equation}
+    
+    \item \textbf{收敛性定理 (理论基础)}：
+    为了使估计 $p_n(x)$ 收敛于真实密度 $p(x)$，当 $n \to \infty$ 时，必须满足三个条件：
+    \begin{enumerate}
+        \item $\lim_{n \to \infty} V_n = 0$ （保证空间分辨率，偏差趋于0）
+        \item $\lim_{n \to \infty} k_n = \infty$ （保证统计稳定性，方差趋于0）
+        \item $\lim_{n \to \infty} k_n/n = 0$ （保证估计收敛，虽然 $k$ 变大，但相对比例要变小）
+    \end{enumerate}
+\end{itemize}
 
-\subsubsection{算法实现：SVM预测流程}
-SVM 的预测仅依赖于支持向量（$\alpha_i^* > 0$ 的样本）。
+\subsection{3. Parzen窗估计 (核密度估计)}
+\textbf{策略}：固定体积 $V_n$（通常令 $V_n = h_n^d / \sqrt{n}$ 等形式收缩），求落入该体积内的样本数 $k_n$。
 
-\begin{algorithm}[H]
-    \caption{基于核函数的SVM预测算法}
-    \begin{algorithmic}[1]
-    \Require 训练好的支持向量集 $S = \{(x_i, y_i, \alpha_i^*) \mid \alpha_i^* > 0\}$，偏置 $b^*$，核函数 $K(\cdot, \cdot)$，测试样本 $x$
-    \Ensure 预测类别 $\hat{y}$
-    \State $f \gets 0$
-    \For{每个支持向量 $(x_i, y_i, \alpha_i^*) \in S$}
-        \State $f \gets f + \alpha_i^* \cdot y_i \cdot K(x_i, x)$ \Comment{计算加权核函数值}
-    \EndFor
-    \State $f \gets f + b^*$
-    \State $\hat{y} \gets \text{sign}(f)$
-    \State \Return $\hat{y}$
-    \end{algorithmic}
-\end{algorithm}
-
-\subsection{SVM的扩展}
 \begin{itemize}
-    \item \textbf{核逻辑回归 (Kernel Logistic Regression, KLR)}：
-    将 LR 的线性部分 $w^T x$ 替换为核形式 $\sum \alpha_i K(x_i, x)$。KLR 输出概率，解不具有稀疏性。
-    \item \textbf{多分类 SVM}：
+    \item \textbf{核函数 (Kernel Function) $\varphi(u)$}：
+    相当于定义了一个“窗口”形状。必须满足：
+    \[ \varphi(u) \ge 0, \quad \int \varphi(u) du = 1 \]
+    
+    \item \textbf{估计公式}：
+    \begin{equation}
+        p_n(x) = \frac{1}{n} \sum_{i=1}^n \frac{1}{h_n^d} \varphi\left(\frac{x-x_i}{h_n}\right)
+    \end{equation}
+    \textit{直观理解}：在每个样本点 $x_i$ 处堆放一个“小土包”（核函数），最后把所有土包叠加起来取平均，就得到了整体的地形（密度函数）。
+
+    \item \textbf{典型窗函数}：
     \begin{itemize}
-        \item \textbf{One-vs-Rest (OvR)}：训练 $k$ 个分类器，取置信度最高者。
-        \item \textbf{One-vs-One (OvO)}：训练 $k(k-1)/2$ 个分类器，采用投票法。
+        \item \textbf{方窗 (Hypercube Kernel)}：
+        \[ \varphi(u) = \begin{cases} 1, & |u_j| \le 1/2 \\ 0, & \text{otherwise} \end{cases} \]
+        特点：计算简单，但估计出的密度函数不连续（阶梯状）。
+        \item \textbf{高斯窗 (Gaussian Kernel)}：
+        \[ \varphi(u) = \frac{1}{(2\pi)^{d/2}} \exp\left(-\frac{1}{2} \|u\|^2\right) \]
+        特点：光滑连续，是应用最广泛的核函数。
     \end{itemize}
-    \item \textbf{支持向量回归 (SVR)}：引入 $\epsilon$-不敏感损失函数，只惩罚超出 $\epsilon$ 管道的误差。
+
+    \item \textbf{窗宽 $h_n$ (Bandwidth) 的关键影响}：
+    \begin{itemize}
+        \item \textbf{$h_n$ 过大}：分辨率低，细节丢失，\textbf{偏差大 (High Bias)}，平滑过度。
+        \item \textbf{$h_n$ 过小}：对噪声敏感，出现很多尖峰，\textbf{方差大 (High Variance)}，欠平滑。
+        \item \textbf{最佳 $h_n$}：通常取 $h_n \propto n^{-1/5}$ (在MSE准则下)。
+    \end{itemize}
+    
+    \item \textbf{收敛性分析}：
+    \begin{itemize}
+        \item 均值：$E[p_n(x)]$ 是真实密度 $p(x)$ 与窗函数的卷积（平滑后的版本）。
+        \item 方差：$\text{Var}[p_n(x)] \approx \frac{p(x)}{n V_n}$。可见 $V_n$ 不能太小，否则方差爆炸。
+    \end{itemize}
 \end{itemize}
 
-\newpage
-%===========================================================
-% 第11章 决策树方法
-%===========================================================
-\section{决策树方法 \small{(3学时 向世明)}}
-
-\subsection{特征选择准则}
-决策树生成的关键在于选择最优划分属性。
-
-\begin{enumerate}
-    \item \textbf{信息增益 (ID3 算法)}：
-    $$ g(D, A) = H(D) - H(D|A) $$
-    其中 $H(D)$ 为经验熵，$H(D|A)$ 为条件熵。缺点是偏向于选择取值较多的特征（如ID号）。
-    
-    \item \textbf{信息增益比 (C4.5 算法)}：
-    $$ g_R(D, A) = \frac{g(D, A)}{H_A(D)} $$
-    引入属性 $A$ 的固有熵 $H_A(D)$ 进行惩罚。C4.5 还能处理连续值（二分法）和缺失值。
-    
-    \item \textbf{基尼指数 (CART 算法)}：
-    $$ \text{Gini}(p) = 1 - \sum_{k=1}^K p_k^2 $$
-    反映了从数据集中随机抽取两个样本类别不一致的概率。CART 生成的是二叉树。
-\end{enumerate}
-
-\subsection{决策树生成算法}
-典型的决策树生成是一个递归过程。
-
-\begin{algorithm}[H]
-    \caption{决策树生成算法 (Generic)}
-    \begin{algorithmic}[1]
-    \Require 训练数据集 $D$，特征集 $A$，阈值 $\epsilon$
-    \Ensure 决策树 $T$
-    \Function{GenerateTree}{$D, A$}
-        \If{$D$ 中所有实例属于同一类 $C_k$}
-            \State \Return 单结点树 $T$，标记类别为 $C_k$
-        \EndIf
-        \If{$A = \emptyset$ OR $D$ 在 $A$ 上取值相同}
-            \State \Return 单结点树 $T$，标记为 $D$ 中实例数最大的类
-        \EndIf
-        \State 从 $A$ 中选择最优划分特征 $A_g$ (基于信息增益/增益比/基尼指数)
-        \If{$A_g$ 的优选指标小于 $\epsilon$}
-             \State \Return 单结点树 $T$，标记为 $D$ 中实例数最大的类
-        \EndIf
-        \State 初始化 $T$ 为根结点，特征为 $A_g$
-        \For{$A_g$ 的每一个可能取值 $a_i$}
-            \State $D_i \gets D$ 中特征 $A_g$ 取值为 $a_i$ 的子集
-            \If{$D_i$ 为空}
-                \State 将该分支标记为叶结点，类别为 $D$ 中最多的类
-            \Else
-                \State $T_{sub} \gets \Call{GenerateTree}{D_i, A \setminus \{A_g\}}$ \Comment{递归生成子树}
-                \State 将 $T_{sub}$ 连接为 $T$ 的子结点
-            \EndIf
-        \EndFor
-        \State \Return $T$
-    \EndFunction
-    \end{algorithmic}
-\end{algorithm}
-
-\subsection{决策树剪枝 (Pruning)}
-为了防止过拟合，需对树进行简化。
-\begin{itemize}
-    \item \textbf{预剪枝 (Pre-pruning)}：在生成过程中，若当前划分不能提升泛化性能（如验证集精度），则停止划分。
-    \item \textbf{后剪枝 (Post-pruning)}：先生成完整树，再自底向上考察非叶结点。若替换为叶结点能提升性能，则剪枝。
-    \item \textbf{代价复杂度剪枝 (CCP)}：CART 使用的方法。最小化损失函数 $C_\alpha(T) = C(T) + \alpha|T|$。
-\end{itemize}
-
-\subsection{随机森林 (Random Forests)}
-随机森林是基于 \textbf{Bagging} 的集成学习方法，引入了\textbf{样本随机}和\textbf{特征随机}。
+\subsection{4. $k_n$-近邻估计 (k-NN Estimation)}
+\textbf{策略}：固定样本数 $k_n$（通常取 $k_n = \sqrt{n}$），让体积 $V_n$ 自动适应数据的疏密。
 
 \begin{itemize}
-    \item \textbf{泛化误差}：取决于单棵树的强度 (Strength) 和树之间的相关性 (Correlation)。强度越大、相关性越低，性能越好。
-    \item \textbf{OOB (Out-of-Bag) 估计}：利用 Bootstrap 未采样到的样本（约 36.8\%）作为验证集，无需交叉验证。
+    \item \textbf{方法}：以 $x$ 为中心扩大区域，直到包含第 $k_n$ 个最近邻，此时区域半径为 $r$，体积为 $V_n = c_d r^d$。
+    \item \textbf{公式}：
+    \begin{equation}
+        p_n(x) = \frac{k_n/n}{V_n(x)}
+    \end{equation}
+    \item \textbf{与Parzen窗的对比}：
+    \begin{itemize}
+        \item Parzen窗在数据稀疏区域效果差（很多窗是空的）。
+        \item k-NN 估计在数据密集处 $V_n$ 小（分辨率高），稀疏处 $V_n$ 大（平滑好）。
+    \end{itemize}
+    \item \textbf{缺陷}：估计出的 $p_n(x)$ 拖尾严重，积分为 $\infty$，不是严格的概率密度函数。
 \end{itemize}
 
-\begin{algorithm}[H]
-    \caption{随机森林构建算法}
-    \begin{algorithmic}[1]
-    \Require 训练集 $D$，树的棵数 $K$，特征子集大小 $m$
-    \Ensure 随机森林模型 $RF = \{h_1, \dots, h_K\}$
-    \For{$k = 1$ to $K$}
-        \State \textbf{Bootstrap采样}：从 $D$ 中有放回随机采样 $N$ 次，得到训练子集 $D_k$
-        \State \textbf{树生长}：使用 $D_k$ 训练决策树 $h_k$
-        \State 在树的每个节点分裂时：
-        \State \quad 1. 从所有 $M$ 个特征中\textbf{随机}选择 $m$ 个特征 ($m \ll M$)
-        \State \quad 2. 在这 $m$ 个特征中计算最优分裂点
-        \State \quad 3. 树生长到最大深度，\textbf{不进行剪枝}
-        \State $RF \gets RF \cup \{h_k\}$
-    \EndFor
-    \State \textbf{预测}：对于新样本 $x$，分类任务采用\textbf{多数投票}，回归任务采用\textbf{平均值}。
-    \end{algorithmic}
-\end{algorithm}
+\subsection{5. 最近邻分类器 (Nearest Neighbor Rule)}
+\begin{itemize}
+    \item \textbf{几何解释：Voronoi 泰森多边形}：
+    \begin{itemize}
+        \item 将特征空间划分为许多多边形区域，每个区域包含一个训练样本。
+        \item 区域内任意一点到该样本的距离都小于到其他样本的距离。
+        \item 1-NN 的决策边界就是这些 Voronoi 多胞体的边界。
+    \end{itemize}
+
+    \item \textbf{渐进错误率分析}：
+    设 $P^*$ 为贝叶斯最优错误率（Bayes Error），$P$ 为 1-NN 的错误率。当 $n \to \infty$ 时：
+    \begin{itemize}
+        \item 直观逻辑：当样本无限密时，测试样本 $x$ 与其最近邻 $x'$ 无限接近，它们属于某一类的后验概率几乎相同。
+        \item \textbf{界限公式}：
+        \begin{equation}
+            P^* \le P \le P^*(2 - \frac{c}{c-1}P^*) \le 2P^*
+        \end{equation}
+        其中 $c$ 是类别数。
+        \item \textbf{结论}：虽然 1-NN 很简单（甚至没有训练过程），但其性能下限非常有保证——错误率绝不会超过贝叶斯错误率的 2 倍。
+    \end{itemize}
+\end{itemize}
+
+\subsection{6. 计算复杂度的优化}
+k-NN 的主要缺点是测试阶段计算量大（Lazy Learning），需计算与所有 $n$ 个样本的距离。
+
+\begin{itemize}
+    \item \textbf{1. 快速搜索 (Fast Search)}：
+    \begin{itemize}
+        \item \textbf{部分距离法 (Partial Distance)}：计算欧氏距离时，如果前 $m$ 维的累积平方和已经超过了当前的最小距离，直接在此中断，不计算剩下的维度。
+        \item \textbf{分层搜索树 (KD-Tree)}：
+        \begin{itemize}
+            \item 将样本空间按坐标轴递归分割，构成二叉树。
+            \item 查询时通过回溯搜索，平均复杂度从 $O(n)$ 降至 $O(\log n)$。
+            \item 在高维空间 ($d > 20$) 效果退化为线性扫描。
+        \end{itemize}
+    \end{itemize}
+
+    \item \textbf{2. 样本集剪辑与压缩}：
+    \begin{itemize}
+        \item \textbf{剪辑 (Editing)} —— \textit{去噪}：
+        利用 Wilson 算法等，剔除那些被“异类”包围的样本（通常是噪声或重叠区），使得决策边界更平滑（Smooth），提高泛化能力。
+        \item \textbf{压缩 (Condensing)} —— \textit{减量}：
+        保留定义决策边界的“边界样本”，剔除那些在 Voronoi 区域内部、对分类不起作用的样本。目的是在保持分类性能不变的前提下，大幅减少存储和计算量。
+    \end{itemize}
+\end{itemize}
+
+\subsection{7. 距离度量与切距离}
+\begin{itemize}
+    \item \textbf{闵可夫斯基距离 (Minkowski Metric)}：
+    \[ L_p(x, y) = (\sum |x_i - y_i|^p)^{1/p} \]
+    \begin{itemize}
+        \item $p=1$: 曼哈顿距离。
+        \item $p=2$: 欧氏距离。
+        \item $p=\infty$: 切比雪夫距离 ($\max |x_i - y_i|$).
+    \end{itemize}
+    
+    \item \textbf{切距离 (Tangent Distance) - Simard}：
+    \begin{itemize}
+        \item \textbf{背景}：用于手写数字识别。解决图像旋转、缩放、笔画粗细变化导致的欧氏距离失效问题。
+        \item \textbf{原理}：对于一个图像 $x$，其经过各种变换（旋转 $\alpha$ 等）构成的轨迹是一个流形 (Manifold)。
+        \item 在 $x$ 处做切平面（Tangent Plane），用点到切平面的距离代替点到点的距离。
+        \item \textbf{效果}：具有对仿射变换的不变性 (Invariance)。
+    \end{itemize}
+\end{itemize}
 
 \newpage
-\section{模式识别前沿趋势 \small{(3学时 向世明)}}
-\subsection{课程内容总体回顾}
-\subsection{模式识别发展现状与新动态}
-\subsection{模式识别中的挑战性问题}
+% \section{线性分类器设计 \small{(3学时 张燕明)}}
 
-\newpage
-\section{考核 \small{(6学时 向世明)}}
-\subsection{考试+答疑}
+% \subsection{引言}
+% \begin{itemize}
+%     \item \textbf{生成模型 (Generative Models)}：
+%     先估计类条件概率密度 $p(x|\omega_i)$ 和先验概率 $P(\omega_i)$，再利用贝叶斯公式求后验概率。
+%     \item \textbf{判别模型 (Discriminative Models)}：
+%     不估计概率密度，直接学习后验概率 $P(\omega_i|x)$ 或直接学习判别函数 $g_i(x)$ 的参数。线性分类器属于此类。
+%     \item \textbf{基本假设}：
+%     假设判别函数 $g(x)$ 具有特定的函数形式（如线性函数），利用训练样本集确定函数中的参数。
+% \end{itemize}
+
+% \subsection{线性判别函数与决策面}
+% \begin{itemize}
+%     \item \textbf{两类问题}：
+%     \begin{itemize}
+%         \item \textbf{定义}：$g(x) = w^T x + w_0$。其中 $w$ 为权重向量，$w_0$ 为偏置（阈值）。
+%         \item \textbf{决策规则}：
+%         \begin{equation}
+%             \begin{cases}
+%             g(x) > 0 \Rightarrow x \in \omega_1 \\
+%             g(x) < 0 \Rightarrow x \in \omega_2 \\
+%             g(x) = 0 \Rightarrow \text{不定 (决策边界)}
+%             \end{cases}
+%         \end{equation}
+%         \item \textbf{几何性质}：
+%         \begin{itemize}
+%             \item \textbf{决策面}：$H: g(x) = 0$ 是一个超平面，法向量为 $w$。
+%             \item \textbf{距离}：任意样本 $x$ 到超平面 $H$ 的代数距离为 $r = \frac{g(x)}{\|w\|}$。
+%             \item \textbf{原点距离}：原点到超平面的距离为 $\frac{w_0}{\|w\|}$。
+%         \end{itemize}
+%     \end{itemize}
+    
+%     \item \textbf{多类问题}：
+%     \begin{itemize}
+%         \item \textbf{一对其余 (One-vs-All)}：构造 $c$ 个两类分类器。存在“不确定区域”。
+%         \item \textbf{一对一 (One-vs-One)}：构造 $c(c-1)/2$ 个两类分类器，通过投票决策。也存在不确定区域。
+%         \item \textbf{线性机器 (Linear Machine)}：
+%         定义 $c$ 个判别函数 $g_i(x) = w_i^T x + w_{i0}$，决策规则为取最大值：
+%         \[ x \in \omega_i \quad \text{if } g_i(x) > g_j(x), \forall j \neq i \]
+%         这种方法将特征空间划分为 $c$ 个凸区域。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{广义线性判别函数}
+% 通过非线性映射 $\varphi(x)$ 将低维线性不可分数据映射到高维空间，使其在高维空间线性可分。
+% \begin{itemize}
+%     \item \textbf{齐次增广表示}：
+%     为了简化计算，通常将偏置 $w_0$ 纳入权重向量。
+%     \begin{equation}
+%         y = [1, x_1, \dots, x_d]^T, \quad a = [w_0, w_1, \dots, w_d]^T \quad \Rightarrow \quad g(x) = a^T y
+%     \end{equation}
+%     此时决策面必然通过增广空间的原点。
+%     \item \textbf{二次判别函数}：
+%     $g(x) = \sum w_{ii} x_i^2 + \sum \sum w_{ij} x_i x_j + \sum w_i x_i + w_0$。
+%     通过映射 $y = [1, x_1, \dots, x_d, x_1^2, x_1 x_2, \dots]^T$，可将其转化为线性形式 $a^T y$。
+%     \item \textbf{维数灾难}：随着阶数增加，映射后的维数呈指数级爆炸，计算复杂度急剧上升。
+% \end{itemize}
+
+% \subsection{感知准则函数 (Perceptron)}
+% 假设样本集线性可分。为了统一处理，对 $\omega_2$ 类的样本进行\textbf{规范化 (Normalization)}：$y \leftarrow -y$。
+% 此时目标变为寻找 $a$，使得对所有样本 $y_i$，均有 $a^T y_i > 0$。
+
+% \begin{itemize}
+%     \item \textbf{准则函数}：
+%     感知器只关注被\textbf{错分}的样本集合 $\mathcal{Y}$ (即满足 $a^T y \le 0$ 的样本)。
+%     \begin{equation}
+%         J_p(a) = \sum_{y \in \mathcal{Y}} (-a^T y)
+%     \end{equation}
+%     \item \textbf{梯度下降}：$\nabla J_p = \sum_{y \in \mathcal{Y}} (-y)$。
+%     \item \textbf{批处理感知器算法 (Batch Perceptron)}：
+%     \begin{equation}
+%         a_{k+1} = a_k + \eta_k \sum_{y \in \mathcal{Y}_k} y
+%     \end{equation}
+%     \item \textbf{单样本感知器算法 (Fixed-Increment Single-Sample)}：
+%     每次只处理一个错分样本 $y^k$：
+%     \begin{equation}
+%         a_{k+1} = a_k + y^k
+%     \end{equation}
+%     \item \textbf{收敛性定理}：若样本线性可分，固定增量的感知器算法必在\textbf{有限步}内收敛。
+% \end{itemize}
+
+% \subsection{松驰方法 (Relaxation Procedures)}
+% 感知器要求严格分类正确 ($a^T y > 0$)，松弛方法引入间隔 $b$ ($a^T y \ge b$)，并使用平方误差来平滑目标函数。
+
+% \begin{itemize}
+%     \item \textbf{准则函数 (SQ Error with Margin)}：
+%     \begin{equation}
+%         J_r(a) = \frac{1}{2} \sum_{y \in \mathcal{Y}} \frac{(a^T y - b)^2}{\|y\|^2}
+%     \end{equation}
+%     其中 $\mathcal{Y}$ 是满足 $a^T y \le b$ 的错分样本集。
+%     \item \textbf{单样本更新规则}：
+%     \begin{equation}
+%         a_{k+1} = a_k + \eta \frac{b - a_k^T y^k}{\|y^k\|^2} y^k
+%     \end{equation}
+%     其中 $0 < \eta < 2$。
+%     \begin{itemize}
+%         \item $\eta = 1$：一步将 $a$ 投影到满足 $a^T y^k = b$ 的超平面上。
+%         \item $\eta < 1$：欠松弛（Under-relaxation）。
+%         \item $\eta > 1$：超松弛（Over-relaxation）。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{线性最小二乘方法 (MSE)}
+% 将不等式求解 $a^T y_i > 0$ 转化为等式求解 $a^T y_i = b_i$。
+% 定义矩阵 $Y \in \mathbb{R}^{n \times (d+1)}$，目标是解方程组 $Ya = b$。
+
+% \begin{itemize}
+%     \item \textbf{MSE 准则函数}：
+%     \begin{equation}
+%         J_s(a) = \|Ya - b\|^2 = \sum_{i=1}^n (a^T y_i - b_i)^2
+%     \end{equation}
+%     \item \textbf{伪逆解 (Pseudo-inverse Solution)}：
+%     令 $\nabla J_s = 0$，得解析解：
+%     \begin{equation}
+%         a = (Y^T Y)^{-1} Y^T b = Y^\dagger b
+%     \end{equation}
+%     \item \textbf{LMS 算法 (Widrow-Hoff)}：
+%     为了避免计算矩阵的逆，使用随机梯度下降（SGD）：
+%     \begin{equation}
+%         a_{k+1} = a_k + \eta_k (b_k - a_k^T y^k) y^k
+%     \end{equation}
+%     注意：MSE 追求均方误差最小，其解\textbf{不一定}位于线性可分区域内（对离群点敏感）。
+% \end{itemize}
+
+% \paragraph{Ho-Kashyap 算法：}
+% MSE 方法中 $b$ 是人为固定的（如全1），这限制了灵活性。Ho-Kashyap 算法同时优化 $a$ 和 $b$（要求 $b > 0$）。
+% \begin{enumerate}
+%     \item 目标：最小化 $J_s(a, b) = \|Ya - b\|^2$，约束 $b > 0$。
+%     \item 迭代步骤：
+%     \begin{itemize}
+%         \item 固定 $b$，更新 $a$：$a = Y^\dagger b$
+%         \item 固定 $a$，更新 $b$：$b_{k+1} = b_k + 2\eta (e_k + |e_k|)$，其中 $e_k = Ya - b$。
+%     \end{itemize}
+%     \item 特点：如果问题线性可分，该算法保证收敛；如果不可分，会给出指示（误差 $e$ 不为零但无法继续下降）。
+% \end{enumerate}
+
+% \subsection{多类线性判别函数}
+% \begin{itemize}
+%     \item \textbf{MSE 的多类扩展}：
+%     定义 $W \in \mathbb{R}^{(d+1) \times c}$，利用 One-hot 编码将标签转化为目标向量 $z_i \in \{0, 1\}^c$。
+%     目标函数：$\min_W \sum \|W^T x_i - z_i\|^2$。
+%     \item \textbf{Kesler 构造法}：
+%     将多类分类问题转化为一个高维空间中的两类分类问题。
+%     对于属于 $\omega_1$ 类的样本 $x$，构造 $c-1$ 个增广样本，使得多类判别条件 $w_1^T x > w_j^T x$ 转化为 $a^T \eta_{1j} > 0$。
+%     \item \textbf{逻辑回归 (Logistic Regression)}：
+%     虽然名字叫回归，实为分类。利用 Sigmoid 函数 $\sigma(z) = \frac{1}{1+e^{-z}}$ 输出后验概率。
+%     \begin{equation}
+%         P(\omega_1 | x) = \frac{1}{1 + \exp(-a^T x)}
+%     \end{equation}
+%     \textbf{Softmax 回归}（多类情形）：
+%     \begin{equation}
+%         P(\omega_i | x) = \frac{\exp(w_i^T x)}{\sum_{j=1}^c \exp(w_j^T x)}
+%     \end{equation}
+%     通常使用\textbf{最大似然估计 (MLE)} 和梯度上升法进行训练。
+% \end{itemize}
+
+% \begin{algorithm}[H]
+%     \caption{批处理感知器算法 (Batch Perceptron)}
+%     \begin{algorithmic}[1]
+%     \Require 规范化增广样本集 $Y=\{y_1, \dots, y_n\}$, 学习率 $\eta$
+%     \Ensure 权向量 $a$
+%     \State 初始化 $a_0$, $k \gets 0$
+%     \Repeat
+%         \State $Y_k \gets \emptyset$ \Comment{初始化错分样本集}
+%         \For{$i = 1 \to n$}
+%             \If{$a_k^T y_i \le 0$}
+%                 \State $Y_k \gets Y_k \cup \{y_i\}$
+%             \EndIf
+%         \EndFor
+%         \State $a_{k+1} \gets a_k + \eta \sum_{y \in Y_k} y$ \Comment{梯度下降更新}
+%         \State $k \gets k + 1$
+%     \Until{$Y_k = \emptyset$}
+%     \State \Return $a_k$
+%     \end{algorithmic}
+% \end{algorithm}
+
+% \newpage
+% \section{神经网络和深度学习 \small{(9学时 张燕明)}}
+
+% \subsection{人工神经网络发展历程}
+% \begin{itemize}
+%     \item \textbf{第一阶段：萌芽期 (1940s - 1960s)}
+%     \begin{itemize}
+%         \item 1943年，McCulloch 和 Pitts 提出 MP 模型，是首个神经元数学模型，利用阈值逻辑模拟神经冲动。
+%         \item 1949年，Hebb 提出 Hebb 学习规则（“Fire together, wire together”）。
+%         \item 1958年，Rosenblatt 提出 感知器 (Perceptron)，掀起第一次高潮，能解决线性分类问题。
+%         \item 1969年，Minsky 和 Papert 出版《Perceptrons》，证明感知器无法解决 异或 (XOR) 等线性不可分问题，导致神经网络研究进入第一个寒冬。
+%     \end{itemize}
+%     \item \textbf{第二阶段：复兴期 (1980s - 1990s)}
+%     \begin{itemize}
+%         \item 1982年，Hopfield 提出 Hopfield 网络，引入能量函数，不仅具备联想记忆功能，还解决了 TSP 等优化问题。
+%         \item 1986年，Rumelhart, Hinton 等人重新提出 误差反向传播 (BP) 算法，有效解决了多层网络的训练问题，掀起第二次高潮。
+%         \item 1990年代中期，随着 SVM（支持向量机）等统计学习方法的兴起（数学理论更完备），神经网络研究再次进入低谷。
+%     \end{itemize}
+%     \item \textbf{第三阶段：爆发期 (Deep Learning, 2006s - 至今)}
+%     \begin{itemize}
+%         \item 2006年，Hinton 提出 深度置信网络 (DBN) 和“逐层预训练 + 微调”的策略，开启了深度学习时代。
+%         \item 2012年，AlexNet 在 ImageNet 图像分类竞赛中以显著优势夺冠，深度学习在计算机视觉领域全面爆发。
+%         \item 此后，CNN、RNN、Transformer、GAN、GNN 等模型层出不穷，在语音、NLP、生成模型等领域取得突破。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{人工神经网络基础}
+% \begin{itemize}
+%     \item \textbf{MP 神经元模型}：
+%     $$ y = f\left( \sum_{i=1}^n w_i x_i - \theta \right) = f(w^T x + b) $$
+%     其中 $x$ 是输入，$w$ 是连接权重，$\theta$ 是阈值（偏置 $b=-\theta$），$f(\cdot)$ 是激活函数。
+%     \item \textbf{激活函数 (Activation Functions)}：
+%     \begin{itemize}
+%         \item \textbf{Sigmoid}: $f(x) = \frac{1}{1+e^{-x}}$，将输出压缩到 $(0,1)$，可解释为概率。缺点：易饱和导致\textbf{梯度消失}，非零中心化。
+%         \item \textbf{Tanh}: $f(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$，输出范围 $(-1, 1)$，零中心化，但仍有梯度消失问题。
+%         \item \textbf{ReLU (Rectified Linear Unit)}: $f(x) = \max(0, x)$。优点：计算简单，正区间无梯度消失，加速收敛。缺点：Dead ReLU 问题（负区间梯度为0）。
+%         \item \textbf{Leaky ReLU / PReLU}: 在负区间引入小斜率，解决 Dead ReLU 问题。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{单层前馈神经网络 (Perceptron)}
+% \begin{itemize}
+%     \item \textbf{定义}：只有输入层和输出层，没有隐含层。
+%     \item \textbf{几何意义}：在输入空间定义一个超平面 $w^T x + b = 0$ 将数据分为两类。
+%     \item \textbf{感知器收敛定理}：若训练数据是\textbf{线性可分}的，则感知器学习算法必在有限步内收敛于一个可行解。若不可分，则会震荡。
+%     \item \textbf{局限性}：无法解决 XOR 问题（线性不可分）。
+% \end{itemize}
+
+% \subsection{多层感知器与误差反向传播算法 (MLP \& BP)}
+% \begin{itemize}
+%     \item \textbf{万有逼近定理 (Universal Approximation)}：
+%     只要有足够多的隐含层神经元，单隐层的前馈神经网络可以以任意精度逼近任意连续函数。
+%     \item \textbf{BP 算法推导}：
+%     基于链式法则 (Chain Rule)。
+%     \begin{enumerate}
+%         \item \textbf{前向传播}：信号从输入层经隐含层传向输出层，计算误差 $E$。
+%         \item \textbf{反向传播}：将误差 $E$ 对权重的梯度 $\frac{\partial E}{\partial w}$ 从输出层向输入层反向传播。
+%         \item \textbf{权重更新}：沿梯度负方向调整权重 $\Delta w = -\eta \frac{\partial E}{\partial w}$。
+%     \end{enumerate}
+%     \item \textbf{误差项 $\delta$}：
+%     \begin{itemize}
+%         \item 输出层节点 $j$：$\delta_j = (d_j - y_j) f'(net_j)$
+%         \item 隐层节点 $i$：$\delta_i = f'(net_i) \sum_k \delta_k w_{ki}$ （利用后一层的误差加权求和）。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{BP算法讨论与优化}
+% \begin{itemize}
+%     \item \textbf{学习模式}：
+%     \begin{itemize}
+%         \item \textbf{批量学习 (Batch Learning)}：利用所有样本计算总梯度后更新。方向准确，但计算量大，易陷入局部极小。
+%         \item \textbf{随机梯度下降 (SGD)}：每输入一个样本就更新一次。计算快，利于跳出局部极小，但震荡剧烈。
+%         \item \textbf{小批量学习 (Mini-batch)}：折中方案，如 Batch size=32, 64。深度学习中最常用。
+%     \end{itemize}
+%     \item \textbf{常见问题与对策}：
+%     \begin{itemize}
+%         \item \textbf{局部极小值 (Local Minima)}：
+%         \begin{itemize}
+%             \item 引入 动量项 (Momentum)：$\Delta w(t) = -\eta \nabla E + \alpha \Delta w(t-1)$，利用惯性加速收敛并冲过浅坑。
+%             \item 随机初始化权重、添加随机噪声。
+%         \end{itemize}
+%         \item \textbf{平坦区 (Plateau)}：梯度接近0，收敛慢。对策：使用自适应学习率算法（如 AdaGrad, RMSProp, Adam）。
+%         \item \textbf{过拟合 (Overfitting)}：
+%         \begin{itemize}
+%             \item 早停 (Early Stopping)：验证集误差不再下降时停止。
+%             \item 正则化 (Weight Decay)：在损失函数加入 $L_2$ 范数 $\lambda \|w\|^2$。
+%             \item Dropout：训练时随机“关闭”一部分神经元，测试时全开（相当于集成学习）。
+%             \item 数据增强 (Data Augmentation)：旋转、裁剪、加噪等。
+%         \end{itemize}
+%         \item \textbf{梯度消失/爆炸}：
+%         \begin{itemize}
+%             \item 使用 ReLU 激活函数。
+%             \item Batch Normalization (BN)：对每层输入做归一化，加速训练，缓解梯度问题。
+%             \item ResNet 残差连接。
+%         \end{itemize}
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{反馈神经网络 (Hopfield Network)}
+% \begin{itemize}
+%     \item \textbf{特点}：网络中存在反馈回路，是一个动力学系统。系统状态随时间演化，最终稳定在吸引子 (Attractor)。
+%     \item \textbf{能量函数 (Energy Function)}：
+%     $$ E = -\frac{1}{2} \sum_{i \neq j} w_{ij} x_i x_j - \sum_i \theta_i x_i $$
+%     网络演化过程中能量单调递减 ($dE/dt \le 0$)，最终达到极小值（稳定状态）。
+%     \item \textbf{应用}：
+%     \begin{itemize}
+%         \item 联想记忆 (Associative Memory)：部分/噪声输入能恢复出完整的记忆模式（内容寻址）。
+%         \item 优化计算：如求解 TSP 旅行商问题（将目标函数映射为网络能量函数）。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{径向基函数网络 (RBF)}
+% \begin{itemize}
+%     \item \textbf{Cover 定理}：将低维空间的非线性可分模式映射到高维空间，它们变成线性可分的概率将趋于1。
+%     \item \textbf{结构}：输入层 $\to$ 隐层（非线性映射） $\to$ 输出层（线性组合）。
+%     \item \textbf{径向基函数}：隐层采用高斯函数 $\phi(x) = \exp(-\frac{\|x-c\|^2}{2\sigma^2})$，具有局部响应特性。
+%     \item \textbf{训练策略}：
+%     \begin{enumerate}
+%         \item 无监督学习确定中心 $c_i$（如 K-Means 聚类）。
+%         \item 监督学习确定输出层权重 $w_i$（即线性回归，有解析解）。
+%     \end{enumerate}
+%     \item \textbf{正则化网络}：在 RBF 损失函数中引入平滑项，即 Tikhonov 正则化。
+% \end{itemize}
+
+% \subsection{自组织映射 (SOM)}
+% \begin{itemize}
+%     \item \textbf{原理}：基于大脑皮层的侧抑制现象，是一种无监督竞争式学习。
+%     \item \textbf{目标}：将高维输入空间映射到低维（通常2D）离散网格，且保持拓扑结构不变（相似的输入映射到邻近的神经元）。
+%     \item \textbf{算法流程}：
+%     \begin{enumerate}
+%         \item 竞争：找到与输入 $x$ 距离最近的获胜神经元 (Winner)。
+%         \item 合作：定义获胜神经元的邻域，邻域内的神经元也被激活。
+%         \item 更新：$w_j(t+1) = w_j(t) + \eta(t) h_{j,win}(t) (x - w_j(t))$，拉动权重向量向输入靠近。
+%     \end{enumerate}
+%     \item \textbf{应用}：特征降维、聚类、数据可视化。
+% \end{itemize}
+
+% \subsection{深度学习简介}
+% \begin{itemize}
+%     \item \textbf{浅层 vs 深层}：
+%     \begin{itemize}
+%         \item 浅层模型（如 SVM, 单隐层 MLP）：人工设计特征 + 浅层分类器。
+%         \item 深层模型：自动学习特征 (Representation Learning)，实现“端到端 (End-to-End)”学习。
+%     \end{itemize}
+%     \item \textbf{核心思想}：通过多层非线性变换，从低级特征（边缘）逐层抽象出高级特征（部件、物体）。
+%     \item \textbf{历史转折}：Hinton 在 2006 年提出的“贪婪逐层预训练 (Greedy Layer-wise Pre-training)”解决了深层网络难以训练的问题，尽管后来随着 ReLU 和 BN 的出现，预训练不再是必须的。
+% \end{itemize}
+
+% \subsection{波尔兹曼机 (Boltzmann Machine)}
+% \begin{itemize}
+%     \item \textbf{BM}：一种随机神经网络，神经元状态以概率更新，基于能量模型。
+%     \item \textbf{受限波尔兹曼机 (RBM)}：
+%     \begin{itemize}
+%         \item 结构：层内无连接，层间全连接（二部图结构）。
+%         \item 训练：对比散度 (Contrastive Divergence, CD-k) 算法。通过 Gibbs 采样近似梯度的计算。
+%     \end{itemize}
+%     \item 深度置信网络 (DBN)：由多个 RBM 堆叠而成。
+%     \item 深度波尔兹曼机 (DBM)：层间无向连接的深层模型。
+% \end{itemize}
+
+% \subsection{自编码器 (Autoencoder)}
+% \begin{itemize}
+%     \item \textbf{基本原理}：$Encoder: z=f(x)$, $Decoder: \hat{x}=g(z)$。目标是最小化重构误差 $\|x - \hat{x}\|^2$。
+%     \item \textbf{作用}：降维（类似非线性 PCA）、特征提取、生成模型。
+%     \item \textbf{变体}：
+%     \begin{itemize}
+%         \item 降噪自编码器 (Denoising AE)：输入加噪声 $\tilde{x}$，强迫网络恢复原始 $x$，学习鲁棒特征。
+%         \item 稀疏自编码器 (Sparse AE)：限制隐层神经元的激活率（大部分时间不激活）。
+%         \item 堆叠自编码器 (Stacked AE)：逐层堆叠进行预训练。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{卷积神经网络 (CNN)}
+% 专为处理网格数据（如图像）设计。
+% \begin{itemize}
+%     \item \textbf{核心组件}：
+%     \begin{itemize}
+%         \item 卷积层 (Conv)：利用卷积核提取局部特征。特性：局部连接 (Local Connectivity) 和 权值共享 (Weight Sharing)，大幅减少参数量。
+%         \item 池化层 (Pooling)：下采样（Max Pooling / Avg Pooling）。作用：减少特征图尺寸，增大感受野，提供平移不变性。
+%         \item 全连接层 (FC)：用于最终的分类决策。
+%     \end{itemize}
+%     \item \textbf{经典架构}：
+%     \begin{itemize}
+%         \item LeNet-5 (1998)：早期 CNN，用于手写数字识别。
+%         \item AlexNet (2012)：深度学习爆发的标志，引入 ReLU, Dropout, GPU 加速。
+%         \item VGG (2014)：使用连续的 $3 \times 3$ 小卷积核代替大核，加深网络。
+%         \item GoogLeNet (Inception)：引入 Inception 模块，多尺度卷积并行。
+%         \item ResNet (2015)：引入残差连接 (Skip Connection)，解决了深层网络（如 152 层）的梯度消失/退化问题。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{循环神经网络 (RNN) 与 LSTM}
+% 专为序列数据（语音、文本）设计。
+% \begin{itemize}
+%     \item \textbf{RNN 基本结构}：
+%     引入隐状态 $h_t$，当前输出不仅依赖当前输入 $x_t$，还依赖上一时刻状态 $h_{t-1}$。
+%     $$ h_t = \tanh(W x_t + U h_{t-1} + b) $$
+%     \item \textbf{BPTT (Backprop Through Time)}：按时间展开进行反向传播。
+%     \item \textbf{问题}：长序列训练面临梯度消失或梯度爆炸，难以捕捉长距离依赖。
+%     \item \textbf{LSTM (Long Short-Term Memory)}：
+%     引入细胞状态 (Cell State) $C_t$ 和三个门控单元：
+%     \begin{itemize}
+%         \item 遗忘门 (Forget Gate) $f_t$：决定丢弃多少旧信息。
+%         \item 输入门 (Input Gate) $i_t$：决定更新多少新信息。
+%         \item 输出门 (Output Gate) $o_t$：决定输出多少当前状态。
+%     \end{itemize}
+%     \item \textbf{GRU (Gated Recurrent Unit)}：LSTM 的简化版，合并了细胞状态和隐状态。
+% \end{itemize}
+
+% \subsection{注意力机制与 Transformer}
+
+
+
+% \begin{itemize}
+%     \item \textbf{Seq2Seq 模型}：Encoder-Decoder 架构，早期使用 RNN 处理机器翻译。存在定长向量瓶颈。
+%     \item \textbf{注意力机制 (Attention Mechanism)}：
+%     解码时不再只看最后一个隐状态，而是通过“注意力权重”动态加权 Encoder 的所有输出，聚焦于输入序列的相关部分。
+%     $$ \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V $$
+%     \item \textbf{Transformer (2017)}：
+%     完全抛弃 RNN/CNN，纯基于 Attention 的架构。
+%     \begin{itemize}
+%         \item Self-Attention (自注意力)：捕捉序列内部单词间的关联。
+%         \item Multi-Head Attention：在不同子空间并行关注不同信息。
+%         \item Positional Encoding：由于没有 RNN 的时序结构，需手动注入位置信息。
+%     \end{itemize}
+%     \item \textbf{BERT (Bi-directional Encoder Representations from Transformers)}：
+%     基于 Transformer Encoder 的预训练模型。通过 Masked LM 和 Next Sentence Prediction 任务在大规模语料上预训练，再在下游任务微调，刷新了 NLP 各项记录。
+% \end{itemize}
+
+% \subsection{图神经网络 (GNN)}
+% \begin{itemize}
+%     \item \textbf{动机}：处理非欧几里得空间数据（如社交网络、分子结构、知识图谱）。
+%     \item \textbf{核心机制：消息传递 (Message Passing)}。
+%     节点的特征更新依赖于其邻居节点特征的聚合。
+%     $$ h_v^{(l+1)} = \sigma \left( W \cdot \text{AGGREGATE} (\{h_u^{(l)}, \forall u \in \mathcal{N}(v) \}) \right) $$
+%     \item \textbf{常见模型}：
+%     \begin{itemize}
+%         \item GCN (Graph Convolutional Network)：基于谱图理论或空间邻域聚合。
+%         \item GAT (Graph Attention Network)：在聚合邻居信息时引入注意力机制，给不同邻居分配不同权重。
+%     \end{itemize}
+% \end{itemize}
+
+% \newpage
+% \section{特征提取与选择 \small{(6学时 张燕明)}}
+
+% \subsection{维数灾难 (Curse of Dimensionality)}
+% \begin{itemize}
+%     \item \textbf{现象}：随着特征维数的增加，计算量呈指数级增长；在样本数量固定的情况下，分类器的性能通常先由差变好，达到峰值后，随着维数继续增加反而变差（Hughes 现象）。
+%     \item \textbf{原因}：
+%     \begin{itemize}
+%         \item \textbf{数据稀疏性}：高维空间体积急剧膨胀，样本密度变得极低，为了维持同样的密度，所需样本量呈指数级增加。
+%         \item \textbf{距离失效}：在高维空间中，几乎所有点对之间的距离都趋于相等，欧氏距离等度量失效。
+%     \end{itemize}
+%     \item \textbf{对策}：降维（特征提取与特征选择）。
+% \end{itemize}
+
+% \subsection{特征提取 (Feature Extraction)}
+% \begin{itemize}
+%     \item \textbf{定义}：通过某种数学变换，将原始高维特征空间映射到一个低维子空间，从而生成一组新的特征（原始特征的组合）。
+%     \item \textbf{目的}：降低维度、去除噪声、提高计算效率、可视化。
+%     \item \textbf{分类}：
+%     \begin{itemize}
+%         \item \textbf{无监督}：仅利用数据分布信息（如 PCA）。
+%         \item \textbf{有监督}：利用类别标签信息（如 LDA）。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{线性方法}
+% \subsubsection{1. 主成分分析 (PCA)}
+% \begin{itemize}
+%     \item \textbf{思想}：寻找一个正交投影方向，使得数据投影后的**方差最大**（保留最多信息）或**重构误差最小**。
+%     \item \textbf{求解}：对样本协方差矩阵 $S$ 进行特征值分解。
+%     \begin{equation}
+%         S = \sum_{i=1}^n (x_i - \mu)(x_i - \mu)^T
+%     \end{equation}
+%     \begin{equation}
+%         S u_i = \lambda_i u_i
+%     \end{equation}
+%     选取最大的 $d'$ 个特征值对应的特征向量组成投影矩阵。
+%     \item \textbf{特点}：无监督，线性变换，去相关。
+% \end{itemize}
+
+% \subsubsection{2. 线性判别分析 (Fisher LDA)}
+% \begin{itemize}
+%     \item \textbf{思想}：寻找一个投影方向，使得投影后**类内散度 ($S_w$) 最小**，同时**类间散度 ($S_b$) 最大**（Fisher 准则）。
+%     \item \textbf{优化目标}：
+%     \begin{equation}
+%         J(w) = \frac{w^T S_b w}{w^T S_w w}
+%     \end{equation}
+%     \item \textbf{求解}：转化为广义特征值问题 $S_b w = \lambda S_w w$。
+%     \item \textbf{特点}：有监督，通过最大化类间距离和最小化类内距离来增强分类性能。受限于类别数 $c$，最多提取 $c-1$ 个特征。
+% \end{itemize}
+
+% \subsubsection{3. 多维缩放 (MDS)}
+% \begin{itemize}
+%     \item \textbf{思想}：在低维空间中保持原始高维空间样本间的距离（或相似度）不变。
+% \end{itemize}
+
+% \subsection{非线性方法 (流形学习)}
+% 针对位于非线性流形上的数据，线性方法失效。
+% \begin{itemize}
+%     \item \textbf{核方法 (Kernel Methods)}：
+%     如 Kernel PCA (KPCA)、Kernel LDA (KDA)。利用核技巧将线性方法扩展到非线性空间。
+%     \item \textbf{等距映射 (ISOMAP)}：
+%     基于 MDS，但使用**测地线距离 (Geodesic Distance)** 代替欧氏距离。通过构建近邻图并计算最短路径来近似测地线距离，保持数据的全局几何结构。
+%     \item \textbf{局部线性嵌入 (LLE)}：
+%     \begin{itemize}
+%         \item 假设数据在局部是线性的。
+%         \item \textbf{步骤}：1. 寻找近邻；2. 用近邻线性重构中心点，求重构权重；3. 在低维空间保持重构权重不变，求解低维坐标。
+%         \item \textbf{特点}：保持数据的局部邻域关系。
+%     \end{itemize}
+%     \item \textbf{拉普拉斯特征映射 (Laplacian Eigenmaps)}：
+%     基于图论，通过图拉普拉斯算子的特征分解，使在高维空间相近的点在低维空间也尽可能相近。
+%     \item \textbf{t-SNE}：
+%     主要用于高维数据可视化，通过概率分布匹配保持局部结构。
+% \end{itemize}
+
+% \subsection{特征选择 (Feature Selection)}
+% \begin{itemize}
+%     \item \textbf{定义}：从原始特征集合中挑选出最具代表性的子集，不改变特征的原始物理意义。
+%     \item \textbf{搜索策略}：
+%     \begin{itemize}
+%         \item \textbf{完全搜索}：如分支限界法 (Branch and Bound)，保证找到最优解，但计算量大，仅适用于单调性准则。
+%         \item \textbf{启发式搜索}：
+%         \begin{itemize}
+%             \item \textbf{序列前向选择 (SFS)}：从空集开始，每次加入一个效果最好的特征。
+%             \item \textbf{序列后向选择 (SBS)}：从全集开始，每次剔除一个最无用的特征。
+%             \item \textbf{增L减R法 (L-R Selection)}：结合前向和后向，避免陷入局部极小。
+%         \end{itemize}
+%     \end{itemize}
+%     \item \textbf{评价准则与方法分类}：
+%     \begin{description}
+%         \item[过滤式 (Filter)]：
+%         特征选择独立于后续分类器。使用距离度量、信息增益、相关系数等统计指标评价特征重要性。速度快，通用性强，但精度可能不如包裹式。
+%         \item[包裹式 (Wrapper)]：
+%         直接使用后续分类器的性能（如验证集准确率）作为评价准则。精度高，但计算开销大，易过拟合。
+%         \item[嵌入式 (Embedded)]：
+%         特征选择与模型训练过程融合。如 LASSO ($L_1$ 正则化) 导致权重稀疏，或决策树/随机森林中的特征重要性评分。
+%     \end{description}
+% \end{itemize}
+
+% \newpage
+% \section{模型选择 \small{(3学时 张燕明)}}
+
+% \subsection{模型选择原则}
+% \begin{itemize}
+%     \item \textbf{奥卡姆剃刀原理 (Occam's Razor)}：
+%     \begin{itemize}
+%         \item \textbf{核心思想}：“如无必要，勿增实体”。在性能相近的模型中，优先选择\textbf{更简单}（参数更少、结构更精简）的模型。
+%         \item \textbf{应用}：正则化 (Regularization)，即在损失函数中增加惩罚项（如 $L_1, L_2$ 范数）以限制模型复杂度。
+%     \end{itemize}
+%     \item \textbf{没有免费的午餐定理 (No Free Lunch Theorem, NFL)}：
+%     \begin{itemize}
+%         \item \textbf{结论}：不存在一个在所有可能问题上都最优的算法。算法的性能是与具体问题相关的。
+%         \item \textbf{推论}：脱离具体问题谈论“最好的算法”没有意义，必须结合数据的先验知识和分布特性来选择模型。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{模型评价标准}
+% \begin{itemize}
+%     \item \textbf{基本概念}：
+%     \begin{itemize}
+%         \item \textbf{训练误差 (Training Error)}：模型在训练集上的误差，易受过拟合影响。
+%         \item \textbf{泛化误差 (Generalization Error)}：模型在未见过的测试数据上的误差，是评价模型真实性能的关键指标。
+%     \end{itemize}
+%     \item \textbf{样本划分与验证方法}：
+%     \begin{itemize}
+%         \item \textbf{留出法 (Holdout)}：将数据随机划分为训练集和测试集（如 7:3 或 8:2）。
+%         \item \textbf{K折交叉验证 (K-fold Cross Validation)}：将数据均分为 $K$ 份，轮流用其中 1 份做测试，其余 $K-1$ 份做训练，取 $K$ 次结果的平均值。常用于超参数选择。
+%         \item \textbf{留一法 (Leave-One-Out, LOO)}：$K=N$ 的特例，每次只留一个样本做测试。方差大，计算代价高。
+%         \item \textbf{自助法 (Bootstrap)}：通过有放回采样生成训练集。约 36.8\% 的样本未被选中（Out-of-Bag），可用于测试。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{基于偏差和方差的分类器设计准则}
+% \begin{itemize}
+%     \item \textbf{误差分解}：泛化误差 = 偏差 (Bias)$^2$ + 方差 (Variance) + 噪声 (Noise)。
+%     \item \textbf{偏差-方差权衡 (Bias-Variance Trade-off)}：
+%     \begin{itemize}
+%         \item \textbf{高偏差 (High Bias)}：模型过于简单（欠拟合），无法捕捉数据规律（如用直线拟合曲线）。
+%         \item \textbf{高方差 (High Variance)}：模型过于复杂（过拟合），对训练数据的微小扰动非常敏感。
+%     \end{itemize}
+%     \item \textbf{设计准则}：
+%     随着模型复杂度增加，偏差降低，方差升高。最优模型应位于两者之和最小的平衡点。
+%     \begin{figure}[H]
+%         \centering
+%         % \includegraphics[width=0.5\textwidth]{bias_variance.png} % 示意图占位
+%         \caption{模型复杂度与误差的关系：训练误差单调下降，测试误差呈 U 型曲线}
+%     \end{figure}
+% \end{itemize}
+
+% \subsection{分类器集成 (Ensemble Learning)}
+% \begin{itemize}
+%     \item \textbf{核心思想}：“三个臭皮匠，顶个诸葛亮”。通过组合多个基分类器 (Base Classifiers) 来提升整体性能。
+%     \item \textbf{有效条件}：基分类器必须具有\textbf{差异性 (Diversity)}，且精度优于随机猜测 (Error Rate < 0.5)。
+%     \item \textbf{常用方法}：
+%     \begin{enumerate}
+%         \item \textbf{Bagging (Bootstrap Aggregating)}：
+%         \begin{itemize}
+%             \item 并行训练多个基分类器，每个使用不同的 Bootstrap 样本集。
+%             \item 最终决策：分类任务投票 (Voting)，回归任务平均。
+%             \item 代表：随机森林 (Random Forest)。主要降低\textbf{方差}。
+%         \end{itemize}
+%         \item \textbf{Boosting (提升方法)}：
+%         \begin{itemize}
+%             \item 串行训练，后续分类器重点关注前序分类器分错的样本。
+%             \item 代表：Adaboost, GBDT, XGBoost。主要降低\textbf{偏差}。
+%         \end{itemize}
+%         \item \textbf{Stacking (层叠泛化)}：
+%         \begin{itemize}
+%             \item 将初级分类器的输出作为次级分类器（元学习器）的输入。
+%         \end{itemize}
+%     \end{enumerate}
+% \end{itemize}
+
+% \subsection{Adaboost学习方法及其应用}
+% \textbf{Adaboost (Adaptive Boosting)} 是一种前向分步加法模型。
+
+% \subsubsection{1. Adaboost 算法流程}
+% 输入：训练集 $T=\{(x_1, y_1), \dots, (x_N, y_N)\}, y_i \in \{-1, +1\}$。
+% \begin{enumerate}
+%     \item \textbf{初始化权重}：$w_{1,i} = 1/N, \quad i=1,\dots,N$。
+%     \item \textbf{循环 $m = 1$ to $M$}：
+%     \begin{itemize}
+%         \item 基于当前权重分布 $D_m$ 训练弱分类器 $G_m(x)$。
+%         \item 计算加权分类错误率：$e_m = \sum_{i=1}^N w_{m,i} I(G_m(x_i) \neq y_i)$。
+%         \item 计算弱分类器权重（置信度）：
+%         \begin{equation}
+%             \alpha_m = \frac{1}{2} \ln \frac{1-e_m}{e_m}
+%         \end{equation}
+%         \item \textbf{更新样本权重}：
+%         \begin{equation}
+%             w_{m+1, i} = \frac{w_{m,i}}{Z_m} \exp(-\alpha_m y_i G_m(x_i))
+%         \end{equation}
+%         (被错分的样本权重变大，被正确分类的样本权重变小)。
+%     \end{itemize}
+%     \item \textbf{输出强分类器}：
+%     \begin{equation}
+%         F(x) = \text{sign} \left( \sum_{m=1}^M \alpha_m G_m(x) \right)
+%     \end{equation}
+% \end{enumerate}
+
+% \subsubsection{2. 理论性质}
+% Adaboost 的训练误差随弱分类器数量 $M$ 的增加呈\textbf{指数级下降}：
+% $$ \text{Training Error} \le \exp(-2 \sum_{m=1}^M \gamma_m^2) $$
+% 其中 $\gamma_m = 0.5 - e_m$。
+
+% \subsubsection{3. 应用：Viola-Jones 人脸检测}
+% \begin{itemize}
+%     \item \textbf{Haar 特征}：利用矩形区域的像素和差值描述边缘、纹理特征。
+%     \item \textbf{积分图 (Integral Image)}：一种加速算法，使得任意矩形区域的像素和计算复杂度为 $O(1)$。
+%     \item \textbf{级联结构 (Cascade)}：
+%     \begin{itemize}
+%         \item 将多个强分类器串联。
+%         \item \textbf{早期拒绝}：前面的分类器较简单（特征少），阈值宽松，旨在快速排除大量明显的非人脸窗口（负样本）。
+%         \item \textbf{后期精细}：后面的分类器较复杂，负责区分难分辨的样本。
+%         \item 极大地提高了检测速度。
+%     \end{itemize}
+% \end{itemize}
+
+% \newpage
+% \section{聚类分析 \small{(6学时 张燕明)}}
+
+% \subsection{基本概念}
+% \begin{itemize}
+%     \item \textbf{定义}：无监督学习过程，将样本集 $X$ 划分为 $K$ 个互不相交的子集（簇）$D_1, \dots, D_K$，使得同一簇内样本相似度高，不同簇间样本相似度低。
+%     \item \textbf{距离度量}：
+%     \begin{itemize}
+%         \item Minkowski 距离 ($L_q$ norm)：$d(x,y) = (\sum |x_i - y_i|^q)^{1/q}$。($q=2$ 为欧氏距离， $q=1$ 为曼哈顿距离)。
+%         \item 马氏距离 (Mahalanobis)：$d(x,y) = \sqrt{(x-y)^T \Sigma^{-1} (x-y)}$，考虑了特征间的相关性。
+%         \item 余弦相似度 (Cosine)：$s(x,y) = \frac{x^T y}{\|x\| \|y\|}$，主要关注方向而非大小。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{K均值聚类 (K-Means)}
+% \begin{itemize}
+%     \item \textbf{目标函数}：最小化簇内平方误差和 (SSE)。
+%     \begin{equation}
+%         J = \sum_{n=1}^N \sum_{k=1}^K z_{nk} ||x_n - \mu_k||^2
+%     \end{equation}
+%     其中 $z_{nk} \in \{0, 1\}$ 是指示变量，表示样本 $n$ 是否属于簇 $k$。
+%     \item \textbf{算法流程 (Lloyd's Algorithm)}：
+%     \begin{enumerate}
+%         \item \textbf{初始化}：随机选择 $K$ 个中心 $\mu_1, \dots, \mu_K$。
+%         \item \textbf{分配 (Assignment)}：固定 $\mu$，更新 $z$。将每个样本分配到最近的中心。
+%         \[ z_{nk} = 1 \iff k = \arg \min_j ||x_n - \mu_j||^2 \]
+%         \item \textbf{更新 (Update)}：固定 $z$，更新 $\mu$。计算每个簇的新均值。
+%         \[ \mu_k = \frac{\sum_{n} z_{nk} x_n}{\sum_{n} z_{nk}} \]
+%         \item \textbf{迭代}：重复步骤 2-3 直至收敛（中心不再变化或目标函数下降小于阈值）。
+%     \end{enumerate}
+%     \item \textbf{K-Means++ 初始化}：
+%     为了解决对初始值敏感的问题，K-Means++ 按照与已有中心距离的平方成正比的概率选择下一个中心，尽可能使初始中心分散。
+%     \item \textbf{K值选择}：
+%     \textbf{肘部法则 (Elbow Method/Knee Finding)}：绘制目标函数 $J$ 随 $K$ 变化的曲线，选择曲线出现“拐点”处的 $K$ 值。
+% \end{itemize}
+
+% \subsection{模糊K均值聚类 (GMM \& EM)}
+% 传统 K-Means 是硬分配 (Hard Assignment)，即样本只能属于一个簇。PPT 中重点介绍了基于概率的**高斯混合模型 (GMM)** 作为软聚类 (Soft Assignment) 方法。
+
+% \begin{itemize}
+%     \item \textbf{高斯混合模型 (GMM)}：
+%     假设数据由 $K$ 个高斯分布混合生成：
+%     \begin{equation}
+%         p(x) = \sum_{k=1}^K \pi_k \mathcal{N}(x | \mu_k, \Sigma_k)
+%     \end{equation}
+%     其中 $\pi_k$ 是混合系数（先验概率），$\sum \pi_k = 1$。
+%     \item \textbf{EM 算法 (Expectation-Maximization)}：
+%     用于求解含有隐变量（簇标签）的极大似然估计问题。
+%     \begin{itemize}
+%         \item \textbf{E步 (Expectation)}：计算样本属于第 $k$ 个簇的后验概率（Responsibility）。
+%         \begin{equation}
+%             \gamma_k(x_n) = \frac{\pi_k \mathcal{N}(x_n | \mu_k, \Sigma_k)}{\sum_{j=1}^K \pi_j \mathcal{N}(x_n | \mu_j, \Sigma_j)}
+%         \end{equation}
+%         \item \textbf{M步 (Maximization)}：利用加权样本更新参数。
+%         \[ \mu_k^{new} = \frac{1}{N_k} \sum_{n=1}^N \gamma_k(x_n) x_n, \quad \Sigma_k^{new} = \frac{1}{N_k} \sum_{n=1}^N \gamma_k(x_n)(x_n - \mu_k)(x_n - \mu_k)^T \]
+%         其中 $N_k = \sum_{n=1}^N \gamma_k(x_n)$。
+%     \end{itemize}
+%     \item \textbf{与 K-Means 关系}：当 GMM 的协方差矩阵为 $\sigma^2 I$ 且 $\sigma^2 \to 0$ 时，GMM 退化为 K-Means。
+% \end{itemize}
+
+% \subsection{层次聚类 (Hierarchical Clustering)}
+% \begin{itemize}
+%     \item \textbf{策略}：
+%     \begin{itemize}
+%         \item \textbf{凝聚 (Agglomerative)}：自底向上，开始时每个样本是一类，每次合并距离最近的两个类。
+%         \item \textbf{分裂 (Divisive)}：自顶向下，开始时所有样本是一类，每次分裂差异最大的类。
+%     \end{itemize}
+%     \item \textbf{簇间距离度量 (Linkage)}：
+%     \begin{itemize}
+%         \item \textbf{最短距离 (Single Linkage)}：$d(C_i, C_j) = \min_{x \in C_i, y \in C_j} d(x, y)$。易产生“链式效应”。
+%         \item \textbf{最长距离 (Complete Linkage)}：$d(C_i, C_j) = \max_{x \in C_i, y \in C_j} d(x, y)$。倾向于产生球状簇。
+%         \item \textbf{平均距离 (Average Linkage)}：所有点对距离的平均值。
+%     \end{itemize}
+%     \item \textbf{可视化}：使用\textbf{树状图 (Dendrogram)} 展示聚类过程，横轴代表样本，纵轴代表合并时的距离（相似度）。
+% \end{itemize}
+
+% \subsection{谱聚类 (Spectral Clustering)}
+% 基于图论的聚类方法，能够发现\textbf{非凸}形状的簇。
+
+% \begin{itemize}
+%     \item \textbf{基本步骤}：
+%     \begin{enumerate}
+%         \item \textbf{构图}：构建样本的相似度图（如 k-近邻图），得到邻接矩阵 $W$ 和度矩阵 $D$（对角阵，元素为节点度数）。
+%         \item \textbf{拉普拉斯矩阵}：计算图拉普拉斯矩阵。
+%         \begin{itemize}
+%             \item 未归一化：$L = D - W$
+%             \item 对称归一化：$L_{sym} = I - D^{-1/2} W D^{-1/2}$
+%             \item 随机游走归一化：$L_{rw} = I - D^{-1} W$
+%         \end{itemize}
+%         \item \textbf{特征分解}：计算 $L$ 的前 $k$ 个最小特征值对应的特征向量 $u_1, \dots, u_k$。
+%         \item \textbf{新特征空间}：将特征向量作为列组成矩阵 $U \in \mathbb{R}^{N \times k}$，将 $U$ 的每一行视为一个新的 $k$ 维样本 $y_i$。
+%         \item \textbf{聚类}：对 $y_i$ 进行 K-Means 聚类得到最终结果。
+%     \end{enumerate}
+%     \item \textbf{原理}：
+%     谱聚类本质上是图切割问题（如 RatioCut 或 Ncut）的松弛求解。最小化切图代价相当于让簇内连接紧密，簇间连接稀疏。
+% \end{itemize}
+
+% \subsection{在线聚类与竞争学习}
+% \begin{itemize}
+%     \item \textbf{竞争学习 (Competitive Learning)}：
+%     一种在线（Online）聚类方法，样本按顺序输入，每次只更新获胜的那个原型（Winner-take-all）。
+%     \[ \Delta w_{winner} = \eta (x - w_{winner}) \]
+%     \item \textbf{BSAS (Basic Sequential Algorithmic Scheme)}：
+%     \begin{itemize}
+%         \item 按顺序处理每个样本。
+%         \item 计算样本与现有簇中心的距离。
+%         \item 若最小距离大于阈值 $\theta$，则生成新簇；否则归入最近簇并更新中心。
+%         \item 缺点：结果依赖于样本输入顺序。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{集成聚类 (Ensemble Clustering)}
+% \begin{itemize}
+%     \item \textbf{动机}：
+%     单一聚类算法对参数（如 K 值、初始化）敏感。集成聚类通过组合多个基聚类结果（Base Partitions）来提高聚类的\textbf{稳健性 (Robustness)} 和 \textbf{稳定性}。
+%     \item \textbf{多样性构建}：
+%     \begin{itemize}
+%         \item 使用不同的聚类算法（如 K-Means + 层次 + 谱聚类）。
+%         \item 使用不同的参数（如不同的 K，不同的初始化）。
+%         \item 数据重采样（Bagging, Random Projection）。
+%     \end{itemize}
+%     \item \textbf{一致性函数 (Consensus Function)}：
+%     将多个基聚类结果合并为一个最终的一致性划分（Consensus Partition），常用方法包括基于共联矩阵（Co-association Matrix）的投票法或图划分法。
+% \end{itemize}
+
+% \newpage
+% %===========================================================
+% % 第10章 支持向量机与核方法
+% %===========================================================
+% \section{支持向量机与核方法 \small{(6学时 向世明)}}
+
+% \subsection{统计学习理论基础}
+% \begin{itemize}
+%     \item \textbf{核心目标}：在有限样本下寻求\textbf{结构风险最小化 (Structural Risk Minimization, SRM)}，即在保证分类精度的同时，降低模型复杂度，从而提高泛化能力。
+%     \item \textbf{VC维 (VC Dimension)}：
+%     \begin{itemize}
+%         \item \textbf{定义}：假设空间 $H$ 能“打散 (Shatter)”的最大样本数。
+%         \item \textbf{物理意义}：衡量函数集的学习能力（容量）。VC维越高，模型越复杂，越容易过拟合。
+%         \item \textbf{线性模型}：$d$ 维空间中线性分类器的 VC 维为 $d+1$。
+%         \item \textbf{SVM策略}：通过最大化间隔 (Margin)，实际上是在限制函数集的有效 VC 维，从而获得更好的泛化界。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsection{线性可分支持向量机 (Hard Margin SVM)}
+% 假设训练数据线性可分，目标是寻找最大间隔超平面。
+% \begin{itemize}
+%     \item \textbf{超平面方程}：$w^T x + b = 0$。
+%     \item \textbf{几何间隔}：两类支持向量到超平面的距离之和，计算为 $\gamma = \frac{2}{\|w\|}$。
+%     \item \textbf{原始优化问题 (Primal Problem)}：
+%     \begin{equation}
+%         \begin{aligned}
+%         & \min_{w,b} \frac{1}{2} \|w\|^2 \\
+%         & \text{s.t.} \quad y_i(w^T x_i + b) \ge 1, \quad i=1,\dots,N
+%         \end{aligned}
+%     \end{equation}
+%     \item \textbf{支持向量}：满足 $y_i(w^T x_i + b) = 1$ 的样本点，它们决定了最终的决策边界。
+% \end{itemize}
+
+% \subsection{线性支持向量机 (Soft Margin SVM)}
+% 解决数据线性不可分或存在噪声的情况。
+% \begin{itemize}
+%     \item \textbf{松弛变量 (Slack Variables)}：引入 $\xi_i \ge 0$，允许样本偏离间隔边界。
+%     \item \textbf{优化问题}：
+%     \begin{equation}
+%         \begin{aligned}
+%         & \min_{w,b,\xi} \frac{1}{2} \|w\|^2 + C \sum_{i=1}^N \xi_i \\
+%         & \text{s.t.} \quad y_i(w^T x_i + b) \ge 1 - \xi_i, \quad \xi_i \ge 0
+%         \end{aligned}
+%     \end{equation}
+%     \item \textbf{惩罚参数 $C$}：
+%     \begin{itemize}
+%         \item $C$ 较大：对误分类惩罚重，模型趋向于硬间隔（低偏差，高方差）。
+%         \item $C$ 较小：容忍更多误分，模型趋向于更宽的间隔（高偏差，低方差）。
+%     \end{itemize}
+%     \item \textbf{合页损失 (Hinge Loss)}：SVM 的优化目标等价于 $L_2$ 正则项 + Hinge Loss ($[1 - y_i f(x_i)]_+$)。
+% \end{itemize}
+
+% \subsection{对偶理论与核技巧}
+% \subsubsection{对偶问题 (Dual Problem)}
+% 利用拉格朗日乘子法，将原始问题转化为对偶问题，便于引入核函数。
+% \begin{equation}
+%     \begin{aligned}
+%     & \max_{\alpha} \sum_{i=1}^N \alpha_i - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j y_i y_j (x_i \cdot x_j) \\
+%     & \text{s.t.} \quad \sum_{i=1}^N \alpha_i y_i = 0, \quad 0 \le \alpha_i \le C
+%     \end{aligned}
+% \end{equation}
+% \begin{itemize}
+%     \item \textbf{KKT条件}：
+%     \begin{itemize}
+%         \item $\alpha_i = 0$：样本被正确分类且远离边界（非支持向量）。
+%         \item $0 < \alpha_i < C$：样本位于间隔边界上（支持向量，$\xi_i=0$）。
+%         \item $\alpha_i = C$：样本位于间隔边界内（可能被误分，支持向量，$\xi_i > 0$）。
+%     \end{itemize}
+% \end{itemize}
+
+% \subsubsection{核技巧 (Kernel Trick)}
+% 通过非线性映射 $\phi(x)$ 将低维数据映射到高维特征空间。定义核函数 $K(x_i, x_j) = \phi(x_i)^T \phi(x_j)$，避免显式计算高维映射。
+
+% \textbf{常用核函数}：
+% \begin{enumerate}
+%     \item \textbf{线性核 (Linear)}：$K(x, z) = x^T z$。适用于特征维数高的数据（如文本分类）。
+%     \item \textbf{多项式核 (Polynomial)}：$K(x, z) = (x^T z + 1)^d$。
+%     \item \textbf{高斯径向基核 (RBF)}：
+%     \begin{equation}
+%         K(x, z) = \exp\left( -\frac{\|x - z\|^2}{2\sigma^2} \right) = \exp(-\gamma \|x - z\|^2)
+%     \end{equation}
+%     对应无穷维特征空间。$\gamma$ 越大，模型越复杂（越“尖”），易过拟合。
+% \end{enumerate}
+
+% \subsubsection{算法实现：SVM预测流程}
+% SVM 的预测仅依赖于支持向量（$\alpha_i^* > 0$ 的样本）。
+
+% \begin{algorithm}[H]
+%     \caption{基于核函数的SVM预测算法}
+%     \begin{algorithmic}[1]
+%     \Require 训练好的支持向量集 $S = \{(x_i, y_i, \alpha_i^*) \mid \alpha_i^* > 0\}$，偏置 $b^*$，核函数 $K(\cdot, \cdot)$，测试样本 $x$
+%     \Ensure 预测类别 $\hat{y}$
+%     \State $f \gets 0$
+%     \For{每个支持向量 $(x_i, y_i, \alpha_i^*) \in S$}
+%         \State $f \gets f + \alpha_i^* \cdot y_i \cdot K(x_i, x)$ \Comment{计算加权核函数值}
+%     \EndFor
+%     \State $f \gets f + b^*$
+%     \State $\hat{y} \gets \text{sign}(f)$
+%     \State \Return $\hat{y}$
+%     \end{algorithmic}
+% \end{algorithm}
+
+% \subsection{SVM的扩展}
+% \begin{itemize}
+%     \item \textbf{核逻辑回归 (Kernel Logistic Regression, KLR)}：
+%     将 LR 的线性部分 $w^T x$ 替换为核形式 $\sum \alpha_i K(x_i, x)$。KLR 输出概率，解不具有稀疏性。
+%     \item \textbf{多分类 SVM}：
+%     \begin{itemize}
+%         \item \textbf{One-vs-Rest (OvR)}：训练 $k$ 个分类器，取置信度最高者。
+%         \item \textbf{One-vs-One (OvO)}：训练 $k(k-1)/2$ 个分类器，采用投票法。
+%     \end{itemize}
+%     \item \textbf{支持向量回归 (SVR)}：引入 $\epsilon$-不敏感损失函数，只惩罚超出 $\epsilon$ 管道的误差。
+% \end{itemize}
+
+% \newpage
+% %===========================================================
+% % 第11章 决策树方法
+% %===========================================================
+% \section{决策树方法 \small{(3学时 向世明)}}
+
+% \subsection{特征选择准则}
+% 决策树生成的关键在于选择最优划分属性。
+
+% \begin{enumerate}
+%     \item \textbf{信息增益 (ID3 算法)}：
+%     $$ g(D, A) = H(D) - H(D|A) $$
+%     其中 $H(D)$ 为经验熵，$H(D|A)$ 为条件熵。缺点是偏向于选择取值较多的特征（如ID号）。
+    
+%     \item \textbf{信息增益比 (C4.5 算法)}：
+%     $$ g_R(D, A) = \frac{g(D, A)}{H_A(D)} $$
+%     引入属性 $A$ 的固有熵 $H_A(D)$ 进行惩罚。C4.5 还能处理连续值（二分法）和缺失值。
+    
+%     \item \textbf{基尼指数 (CART 算法)}：
+%     $$ \text{Gini}(p) = 1 - \sum_{k=1}^K p_k^2 $$
+%     反映了从数据集中随机抽取两个样本类别不一致的概率。CART 生成的是二叉树。
+% \end{enumerate}
+
+% \subsection{决策树生成算法}
+% 典型的决策树生成是一个递归过程。
+
+% \begin{algorithm}[H]
+%     \caption{决策树生成算法 (Generic)}
+%     \begin{algorithmic}[1]
+%     \Require 训练数据集 $D$，特征集 $A$，阈值 $\epsilon$
+%     \Ensure 决策树 $T$
+%     \Function{GenerateTree}{$D, A$}
+%         \If{$D$ 中所有实例属于同一类 $C_k$}
+%             \State \Return 单结点树 $T$，标记类别为 $C_k$
+%         \EndIf
+%         \If{$A = \emptyset$ OR $D$ 在 $A$ 上取值相同}
+%             \State \Return 单结点树 $T$，标记为 $D$ 中实例数最大的类
+%         \EndIf
+%         \State 从 $A$ 中选择最优划分特征 $A_g$ (基于信息增益/增益比/基尼指数)
+%         \If{$A_g$ 的优选指标小于 $\epsilon$}
+%              \State \Return 单结点树 $T$，标记为 $D$ 中实例数最大的类
+%         \EndIf
+%         \State 初始化 $T$ 为根结点，特征为 $A_g$
+%         \For{$A_g$ 的每一个可能取值 $a_i$}
+%             \State $D_i \gets D$ 中特征 $A_g$ 取值为 $a_i$ 的子集
+%             \If{$D_i$ 为空}
+%                 \State 将该分支标记为叶结点，类别为 $D$ 中最多的类
+%             \Else
+%                 \State $T_{sub} \gets \Call{GenerateTree}{D_i, A \setminus \{A_g\}}$ \Comment{递归生成子树}
+%                 \State 将 $T_{sub}$ 连接为 $T$ 的子结点
+%             \EndIf
+%         \EndFor
+%         \State \Return $T$
+%     \EndFunction
+%     \end{algorithmic}
+% \end{algorithm}
+
+% \subsection{决策树剪枝 (Pruning)}
+% 为了防止过拟合，需对树进行简化。
+% \begin{itemize}
+%     \item \textbf{预剪枝 (Pre-pruning)}：在生成过程中，若当前划分不能提升泛化性能（如验证集精度），则停止划分。
+%     \item \textbf{后剪枝 (Post-pruning)}：先生成完整树，再自底向上考察非叶结点。若替换为叶结点能提升性能，则剪枝。
+%     \item \textbf{代价复杂度剪枝 (CCP)}：CART 使用的方法。最小化损失函数 $C_\alpha(T) = C(T) + \alpha|T|$。
+% \end{itemize}
+
+% \subsection{随机森林 (Random Forests)}
+% 随机森林是基于 \textbf{Bagging} 的集成学习方法，引入了\textbf{样本随机}和\textbf{特征随机}。
+
+% \begin{itemize}
+%     \item \textbf{泛化误差}：取决于单棵树的强度 (Strength) 和树之间的相关性 (Correlation)。强度越大、相关性越低，性能越好。
+%     \item \textbf{OOB (Out-of-Bag) 估计}：利用 Bootstrap 未采样到的样本（约 36.8\%）作为验证集，无需交叉验证。
+% \end{itemize}
+
+% \begin{algorithm}[H]
+%     \caption{随机森林构建算法}
+%     \begin{algorithmic}[1]
+%     \Require 训练集 $D$，树的棵数 $K$，特征子集大小 $m$
+%     \Ensure 随机森林模型 $RF = \{h_1, \dots, h_K\}$
+%     \For{$k = 1$ to $K$}
+%         \State \textbf{Bootstrap采样}：从 $D$ 中有放回随机采样 $N$ 次，得到训练子集 $D_k$
+%         \State \textbf{树生长}：使用 $D_k$ 训练决策树 $h_k$
+%         \State 在树的每个节点分裂时：
+%         \State \quad 1. 从所有 $M$ 个特征中\textbf{随机}选择 $m$ 个特征 ($m \ll M$)
+%         \State \quad 2. 在这 $m$ 个特征中计算最优分裂点
+%         \State \quad 3. 树生长到最大深度，\textbf{不进行剪枝}
+%         \State $RF \gets RF \cup \{h_k\}$
+%     \EndFor
+%     \State \textbf{预测}：对于新样本 $x$，分类任务采用\textbf{多数投票}，回归任务采用\textbf{平均值}。
+%     \end{algorithmic}
+% \end{algorithm}
+
+% \newpage
+% \section{模式识别前沿趋势 \small{(3学时 向世明)}}
+% \subsection{课程内容总体回顾}
+% \subsection{模式识别发展现状与新动态}
+% \subsection{模式识别中的挑战性问题}
+
+% \newpage
+% \section{考核 \small{(6学时 向世明)}}
+% \subsection{考试+答疑}
 
 \newpage
 %===========================================================

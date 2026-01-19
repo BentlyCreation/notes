@@ -1,0 +1,467 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{xeCJK} % 用于中文支持
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+
+% 页面设置
+\geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{NLP与大模型期末复习}
+\lhead{2024真题与模拟题}
+\cfoot{\thepage}
+
+% 字体设置 (根据系统环境调整，Overleaf建议使用 FandolSong 或系统自带字体)
+\setCJKmainfont{FandolSong-Regular}
+\setCJKsansfont{FandolHei-Regular}
+
+% 标题格式
+\titleformat{\section}{\Large\bfseries\sffamily}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\sffamily}{\thesubsection}{1em}{}
+
+% 定义题目和答案环境
+\newenvironment{question}[1]
+    {\vspace{0.5cm}\noindent\textbf{题目 #1：}}
+    {\vspace{0.2cm}}
+
+\newenvironment{answer}
+    {\noindent\textbf{【参考答案】}\par\small\color{blue}}
+    {\par\vspace{0.5cm}\normalcolor}
+
+\newenvironment{analysis}
+    {\noindent\textbf{【解析】}\par\small\color{gray}}
+    {\par\vspace{0.5cm}\normalcolor}
+
+\title{\textbf{自然语言处理与大模型原理}\\2024年真题解析及2025模拟试题库}
+\author{复习资料整理}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% =========================================================================
+% 第一部分：2024年真题还原
+% =========================================================================
+\section{第一部分：2024年期末考试真题还原}
+
+\subsection{一、标注题}
+
+\begin{question}{1}
+\textbf{文本}：“2023年12月，OpenAI首席执行官山姆·奥特曼在旧金山发布了GPT-4 Turbo。”\\
+\textbf{要求}：对上述文本进行分词处理（用“/”隔开），并识别其中的命名实体，标注其实体类型（如 PER, LOC, ORG, TIME）。
+\end{question}
+
+\begin{answer}
+\textbf{1. 分词结果：}\\
+2023年/12月/，/OpenAI/首席/执行官/山姆·奥特曼/在/旧金山/发布/了/GPT-4/Turbo/。
+
+\textbf{2. 命名实体识别 (NER)：}
+\begin{itemize}
+    \item \textbf{TIME (时间)}: 2023年12月
+    \item \textbf{ORG (机构名)}: OpenAI
+    \item \textbf{PER (人名)}: 山姆·奥特曼 (Sam Altman)
+    \item \textbf{LOC (地名)}: 旧金山
+    \item \textbf{MISC (其他实体/产品名)}: GPT-4 Turbo
+\end{itemize}
+\end{answer}
+
+\subsection{二、简答题}
+
+\begin{question}{1}
+解释一下如何对网络收集到的大规模数据进行去噪。
+\end{question}
+
+\begin{answer}
+网络数据（如Common Crawl）包含大量噪声，去噪通常包含以下步骤（参考PPT第8章）：
+\begin{enumerate}
+    \item \textbf{基于规则的过滤}：
+    \begin{itemize}
+        \item 过滤过短、过长或困惑度（Perplexity）过高的文本。
+        \item 过滤非目标语言（如仅保留英文/中文）文本。
+        \item 过滤包含过多特殊符号（如HTML标签、乱码）的文本。
+    \end{itemize}
+    \item \textbf{基于分类器的过滤}：训练一个二分类模型（如基于 fastText），区分“高质量”与“低质量”内容，剔除广告、色情、暴力等低质网页。
+    \item \textbf{去重 (De-duplication)}：
+    \begin{itemize}
+        \item \textbf{精确去重}：使用 MD5 或 SHA-1 移除完全相同的文档。
+        \item \textbf{模糊去重}：使用 MinHash + LSH (局部敏感哈希) 算法，移除内容高度相似（如 Jaccard 相似度 > 0.8）的文档，防止模型背诵。
+    \end{itemize}
+    \item \textbf{隐私去除}：识别并掩盖 PII (个人身份信息)，如手机号、邮箱、IP地址等。
+\end{enumerate}
+\end{answer}
+
+\begin{question}{2}
+解释一下为什么现在的大模型都是GPT系列（Decoder-only）而不是类似于BERT的基于掩码（Encoder-only）的模型。
+\end{question}
+
+\begin{answer}
+\begin{enumerate}
+    \item \textbf{任务目标一致性}：GPT 的自回归（Auto-regressive）生成任务（预测下一个词）与自然语言生成的本质完全一致。而 BERT 的掩码语言模型（MLM）任务依赖于 [MASK] 标记，这种标记在微调和推理时并不存在，导致了\textbf{预训练-微调不一致 (Pre-train/Fine-tune Discrepancy)}。
+    \item \textbf{长文本生成能力}：Decoder-only 架构天然适合长文本生成，因为它可以利用已生成的 Token 作为上下文继续预测；BERT 更擅长理解和判别任务，不擅长从左到右的流式生成。
+    \item \textbf{Scaling Law (规模定律)}：实验表明，在同等参数量和数据量下，Decoder-only 模型在零样本（Zero-shot）和少样本（Few-shot）泛化能力上表现出更强的涌现能力。
+    \item \textbf{计算效率}：Attention 机制在 Decoder 中可以使用 KV-Cache 进行推理加速，而 Encoder-Decoder 架构在生成时稍微复杂一些。
+\end{enumerate}
+\end{answer}
+
+\begin{question}{3}
+解释一下上下文示例 (In-Context Learning) 为什么能提高模型的生成质量。
+\end{question}
+
+\begin{answer}
+上下文示例（Few-shot Prompting）提高生成质量的原因主要有：
+\begin{enumerate}
+    \item \textbf{任务定位}：大模型在预训练中学到了海量任务，示例充当了“索引”，帮助模型在参数空间中快速定位到当前需要的具体任务模式。
+    \item \textbf{格式规范}：示例明确了输入和输出的格式（例如 JSON 格式、特定的问答风格），限制了模型的搜索空间，使其输出更符合预期。
+    \item \textbf{激活知识}：示例中的相关信息可以激活模型在预训练阶段记忆的相关知识（知识检索作用）。
+    \item \textbf{无需梯度更新}：它不改变参数，而是通过改变输入分布 $P(y|x, examples)$ 来引导输出，避免了微调可能带来的灾难性遗忘。
+\end{enumerate}
+\end{answer}
+
+\begin{question}{4}
+模型为什么会有幻觉？RAG怎么解决幻觉的？RAG能彻底解决幻觉问题吗？
+\end{question}
+
+\begin{answer}
+\textbf{1. 幻觉产生原因}：
+\begin{itemize}
+    \item \textbf{数据源问题}：预训练数据本身包含错误或过时信息。
+    \item \textbf{压缩损耗}：模型试图将海量知识压缩进有限的参数中，导致记忆模糊或拼接错误。
+    \item \textbf{概率生成机制}：模型本质是预测概率最大的下一个词，而非判断真理，容易一本正经地胡说八道。
+\end{itemize}
+
+\textbf{2. RAG (检索增强生成) 的解决方式}：
+RAG 在生成前先从外部知识库检索相关文档，将检索到的事实作为上下文输入给模型。这迫使模型基于提供的参考资料生成答案，而非仅凭内部记忆，从而显著降低幻觉。
+
+\textbf{3. 能否彻底解决？}：
+\textbf{不能}。原因如下：
+\begin{itemize}
+    \item \textbf{检索错误}：如果检索到的文档是不相关的或错误的，模型会基于错误信息生成（Garbage In, Garbage Out）。
+    \item \textbf{模型忽视}：模型可能忽略检索内容，仍然依靠内部记忆生成（尤其当内部记忆非常强势时）。
+    \item \textbf{冲突处理}：当检索内容与内部知识冲突时，模型可能会产生混乱的回答。
+\end{itemize}
+\end{answer}
+
+\begin{question}{5}
+想要使用大模型进行语义角色标注 (SRL) 任务，给出算法思路和过程。
+\end{question}
+
+\begin{answer}
+语义角色标注 (SRL) 是识别句子中谓词的论元（如施事、受事、时间、地点）。使用大模型（如 ChatGPT/LLaMA）进行 SRL 的思路通常是\textbf{基于指令微调}或\textbf{提示工程}。
+
+\textbf{算法思路与过程}：
+\begin{enumerate}
+    \item \textbf{任务定义与 Schema 设计}：
+    确定需要抽取的语义角色标签（如 Arg0/施事, Arg1/受事, ArgM-TMP/时间, ArgM-LOC/地点）。设计输出格式（如 JSON 或元组列表）。
+    
+    \item \textbf{构建提示词 (Prompt Design)}：
+    \begin{itemize}
+        \item \textbf{Instruction}: "你是一个语义分析专家，请识别句子中谓词的语义角色。"
+        \item \textbf{Definition}: "Arg0代表施事者，Arg1代表受事者..."
+        \item \textbf{Input}: 待分析的句子。
+    \end{itemize}
+    
+    \item \textbf{引入少样本示例 (Few-shot Examples)}：
+    提供 1-3 个高质量的 SRL 标注样本。
+    \textit{示例输入}：警察正在调查事故原因。
+    \textit{示例输出}：\{"谓词": "调查", "Arg0": "警察", "Arg1": "事故原因", "ArgM-ADV": "正在"\}
+    
+    \item \textbf{推理生成}：
+    将目标句子填入 Prompt，送入 LLM 进行推理。
+    
+    \item \textbf{后处理 (Post-processing)}：
+    解析模型输出的 JSON，将其转换为标准的 BIO 序列标签或结构化数据，进行评估计算 F1 值。
+\end{enumerate}
+\end{answer}
+
+\subsection{三、计算题}
+
+\begin{question}{1}
+给出一段英文文本，对其使用 BPE (Byte Pair Encoding) 算法进行子词压缩。\\
+\textbf{语料库}：\{"low": 5, "lower": 2, "newest": 6, "widest": 3\}\\
+\textbf{初始词表}：所有字符集合。请写出前 2 轮的合并操作。
+\end{question}
+
+\begin{answer}
+\textbf{初始状态 (拆分为字符)}：
+\begin{itemize}
+    \item l o w : 5
+    \item l o w e r : 2
+    \item n e w e s t : 6
+    \item w i d e s t : 3
+\end{itemize}
+\textbf{词表}：\{l, o, w, e, r, n, s, t, i, d\}
+
+\textbf{第 1 轮迭代}：
+统计所有相邻字符对的频次：
+\begin{itemize}
+    \item (e, s): 在 "newest" (6) + "widest" (3) = 9 次 $\to$ \textbf{最高}
+    \item (s, t): 9 次 (也是最高，假设选 es)
+    \item (l, o): 5+2=7 次
+    \item (o, w): 5+2=7 次
+\end{itemize}
+\textbf{操作}：合并 (e, s) $\to$ "es"。
+\textbf{更新语料}：
+\begin{itemize}
+    \item l o w : 5
+    \item l o w e r : 2
+    \item n e w es t : 6
+    \item w i d es t : 3
+\end{itemize}
+
+\textbf{第 2 轮迭代}：
+统计频次：
+\begin{itemize}
+    \item (es, t): 6+3=9 次 $\to$ \textbf{最高}
+    \item (l, o): 7 次
+    \item (o, w): 7 次
+\end{itemize}
+\textbf{操作}：合并 (es, t) $\to$ "est"。
+\textbf{更新语料}：
+\begin{itemize}
+    \item l o w : 5
+    \item l o w e r : 2
+    \item n e w est : 6
+    \item w i d est : 3
+\end{itemize}
+\textbf{最终词表增加}：es, est
+\end{answer}
+
+\begin{question}{2}
+计算 Transformer 模型的参数量和运算量。\\
+假设模型层数 $L=12$，隐藏层维度 $H=768$，词表大小 $V=30000$。仅估算 Transformer Block 部分的参数量（不含 Embedding）。
+\end{question}
+
+\begin{answer}
+一个 Transformer Block 包含两个子层：Multi-Head Attention (MHA) 和 Feed-Forward Network (FFN)。
+
+\textbf{1. 参数量 (Parameters)}：
+\begin{itemize}
+    \item \textbf{MHA 部分}：
+    包含 $W^Q, W^K, W^V, W^O$ 四个矩阵，每个矩阵形状为 $H \times H$。
+    $$ P_{att} = 4 \times H^2 + 4H \text{ (bias)} \approx 4H^2 $$
+    \item \textbf{FFN 部分}：
+    通常中间层维度为 $4H$。两个线性层：$H \to 4H$ 和 $4H \to H$。
+    $$ P_{ffn} = (H \times 4H) + (4H \times H) = 8H^2 $$
+    \item \textbf{LayerNorm}：
+    两个 LN 层，参数为 $2 \times 2H = 4H$ (可忽略)。
+\end{itemize}
+\textbf{单层总参数}：$P_{layer} \approx 12H^2$。
+\textbf{总参数量}：$12 \times 12 \times (768)^2 \approx 85 \times 10^6 \approx 85M$。
+
+\textbf{2. 运算量 (FLOPs) 估算}：
+根据经验公式，训练一个 Token 需要的 FLOPs 约为参数量的 6 倍（2倍Forward，4倍Backward），推理时约为 2 倍。
+\end{answer}
+
+\subsection{四、设计题}
+
+\begin{question}{1}
+\textbf{题目}：多语言模型相关。现有的对齐工作（RLHF/SFT）使用的人类标注数据大多是英文的，导致模型对低资源语言的对齐能力很差。请设计一个算法，让模型在不损失原本英文对齐能力的同时，增强对低资源语言的对齐能力。
+\end{question}
+
+\begin{answer}
+\textbf{设计思路：跨语言指令增强与混合训练策略}
+
+\textbf{1. 问题分析}：
+\begin{itemize}
+    \item 挑战：低资源语言缺乏高质量的 SFT 指令数据和 RLHF 偏好数据。
+    \item 目标：提升低资源语言能力 + 保持英文能力（防止灾难性遗忘）。
+\end{itemize}
+
+\textbf{2. 算法步骤}：
+
+\textbf{步骤一：数据增强（翻译-校对机制）}
+\begin{itemize}
+    \item 利用高质量的机器翻译系统（如 Google Translate 或 强 LLM）将现有的英文 SFT 数据集（如 Alpaca, UltraChat）翻译成目标低资源语言。
+    \item \textbf{关键点}：引入“回译过滤”或“基于奖励模型的过滤”，剔除翻译质量差的数据，构建伪标签低资源数据集 $D_{target}$。
+\end{itemize}
+
+\textbf{步骤二：跨语言混合微调 (Mixed SFT)}
+\begin{itemize}
+    \item 构建混合数据集 $D_{mix} = D_{en} \cup D_{target}$。
+    \item 按照一定比例（如 English:Target = 7:3）进行采样训练。这能保证模型在学习目标语言指令格式的同时，不忘记英文知识。
+\end{itemize}
+
+\textbf{步骤三：跨语言一致性正则化 (Cross-Lingual Consistency Loss)}
+\begin{itemize}
+    \item 在损失函数中加入正则项：对于同一个指令的英文版 $x_{en}$ 和目标语言版 $x_{tgt}$，强制模型生成的 Embedding 或输出概率分布尽可能一致。
+    $$ L = L_{SFT} + \lambda \cdot KL(P(y|x_{en}) || P(y|x_{tgt})) $$
+\end{itemize}
+
+\textbf{步骤四：多语言奖励模型 (Multilingual RM)}
+\begin{itemize}
+    \item 如果进行 RLHF，同样需要将 Reward Model 的训练数据进行翻译。
+    \item 训练一个多语言 RM，使其能对不同语言的回复给出一致的价值观评分，然后用 PPO 优化策略模型。
+\end{itemize}
+\end{answer}
+
+\newpage
+
+% =========================================================================
+% 第二部分：2025年模拟试题库
+% =========================================================================
+\section{第二部分：2025年模拟试题库 (涵盖PPT重点)}
+
+\subsection{一、基础概念与统计NLP}
+
+\begin{question}{M1}
+简述 Zipf 定律（齐夫定律）及其在自然语言处理中的意义。
+\end{question}
+\begin{answer}
+\textbf{定义}：在自然语言语料库中，一个单词出现的频率 $f$ 与其排名 $r$ 成反比，即 $f \times r = C$（常数）。
+\textbf{意义}：它揭示了语言的\textbf{长尾效应 (Long Tail Effect)}。极少数高频词（如“的”、“是”）覆盖了大部分文本，而绝大多数词（低频词）很少出现。这对 NLP 的挑战是\textbf{数据稀疏}问题，即大部分词在训练数据中出现次数不足，难以从统计中学习准确规律，需要使用\textbf{平滑技术}或\textbf{词向量}来缓解。
+\end{answer}
+
+\begin{question}{M2}
+最大熵模型 (MaxEnt) 和 条件随机场 (CRF) 的主要区别是什么？CRF 解决了 HMM 的什么问题？
+\end{question}
+\begin{answer}
+\begin{itemize}
+    \item \textbf{MaxEnt vs CRF}：MaxEnt 通常用于分类问题（如词义消歧），是对数线性模型。CRF 是 MaxEnt 在序列标注任务上的扩展（序列化的 MaxEnt），引入了转移特征，进行全局归一化。
+    \item \textbf{CRF vs HMM}：
+    \begin{enumerate}
+        \item \textbf{独立性假设}：HMM 是生成式模型，假设观察值之间相互独立（Output Independence），难以利用上下文的长距离特征。CRF 是判别式模型，没有该假设，可以灵活利用任意的全局特征。
+        \item \textbf{标注偏置}：相比于 MEMM（最大熵马尔可夫模型），CRF 进行全局归一化，解决了局部归一化导致的标注偏置（Label Bias）问题。
+    \end{enumerate}
+\end{itemize}
+\end{answer}
+
+\subsection{二、深度学习与预训练模型}
+
+\begin{question}{M3}
+BERT 的 [MASK] 预训练任务存在什么缺陷？后续模型（如 XLNet 或 GPT）是如何改进的？
+\end{question}
+\begin{answer}
+\textbf{缺陷}：BERT 在预训练时使用 [MASK] 标记，但在微调和实际推理时，输入文本中并不存在 [MASK]。这种\textbf{预训练-微调不一致 (Discrepancy)} 会影响性能。且 BERT 假设被 Mask 的词之间是独立的，忽略了被遮蔽词之间的依赖关系。
+\textbf{改进}：
+\begin{itemize}
+    \item \textbf{GPT}：采用自回归 (Auto-regressive) 方式，不使用 Mask，而是通过预测下一个词来训练，天然符合生成式任务，无不一致问题。
+    \item \textbf{XLNet}：采用排列语言模型 (Permutation LM)，通过打乱输入序列的因子分解顺序，既保留了双向上下文能力，又避免了引入 [MASK] 标记。
+\end{itemize}
+\end{answer}
+
+\begin{question}{M4}
+请简述 Word2Vec 中 CBOW 和 Skip-gram 模型的区别，并说明为什么需要负采样 (Negative Sampling)。
+\end{question}
+\begin{answer}
+\textbf{区别}：
+\begin{itemize}
+    \item \textbf{CBOW}：根据上下文预测中心词。适合小规模数据，训练快。
+    \item \textbf{Skip-gram}：根据中心词预测上下文词。适合大规模数据，对低频词效果更好。
+\end{itemize}
+\textbf{负采样原因}：
+Word2Vec 的输出层是一个全词表的 Softmax，计算分母需要遍历整个词表（如 10万+），计算量巨大。负采样将多分类问题转化为二分类问题（判断是否为正样本），每次只更新正样本和少量负样本的权重，从而极大提高了训练效率。
+\end{answer}
+
+\subsection{三、大模型训练与微调 (重点)}
+
+\begin{question}{M5}
+什么是 ZeRO (Zero Redundancy Optimizer) 技术？简述 ZeRO-1, ZeRO-2, ZeRO-3 的区别。
+\end{question}
+\begin{answer}
+ZeRO 是一种用于大模型分布式训练的显存优化技术，核心思想是去除数据并行中的\textbf{显存冗余}。
+\begin{itemize}
+    \item \textbf{ZeRO-1}：切分\textbf{优化器状态} (Optimizer States)。每张卡只保存一部分优化器参数。
+    \item \textbf{ZeRO-2}：在 ZeRO-1 基础上，切分\textbf{梯度} (Gradients)。每张卡只负责更新一部分梯度。
+    \item \textbf{ZeRO-3}：在 ZeRO-2 基础上，切分\textbf{模型参数} (Model Parameters)。每张卡只保存模型的一部分层，计算时临时通信获取参数。
+\end{itemize}
+\end{answer}
+
+\begin{question}{M6}
+RLHF (Reinforcement Learning from Human Feedback) 的三个主要步骤是什么？
+\end{question}
+\begin{answer}
+\begin{enumerate}
+    \item \textbf{SFT (有监督微调)}：收集高质量的指令-回复对，微调预训练模型，使其具备基本的遵循指令能力。
+    \item \textbf{RM (奖励模型训练)}：收集人类偏好数据（对同一 Prompt 的多个回复进行排序），训练一个奖励模型，使其能模拟人类的打分标准。
+    \item \textbf{PPO (强化学习优化)}：利用奖励模型作为环境反馈，使用 PPO 算法优化语言模型策略，使其生成的回复能获得更高的奖励分数，同时通过 KL 散度约束防止模型偏离 SFT 模型太远。
+\end{enumerate}
+\end{answer}
+
+\begin{question}{M7}
+简述 FlashAttention 的核心原理及其解决的问题。
+\end{question}
+\begin{answer}
+\textbf{问题}：标准 Attention 的计算复杂度是 $O(N^2)$，且显存占用大。更重要的是，它频繁地在 GPU 的 HBM (高带宽显存) 和 SRAM (片上缓存) 之间读写数据，IO 访问成为瓶颈。
+\textbf{原理}：FlashAttention 通过\textbf{分块计算 (Tiling)} 和 \textbf{重计算 (Recomputation)} 技术，在 SRAM 中进行 Attention 的局部计算，显著减少了对 HBM 的访问次数。
+\textbf{效果}：虽然计算量略增（重计算），但由于 IO 速度的大幅提升，整体训练速度加快，且显存复杂度降为线性。
+\end{answer}
+
+\subsection{四、计算题模拟}
+
+\begin{question}{M8 (困惑度计算)}
+假设一个 Unigram 语言模型，词表中只有三个词：\{"a": 0.5, "b": 0.25, "c": 0.25\}。
+请计算句子 "a b c" 的概率以及该句子的困惑度 (Perplexity)。
+\end{question}
+\begin{answer}
+\textbf{1. 句子概率}：
+$P(a \ b \ c) = P(a) \times P(b) \times P(c) = 0.5 \times 0.25 \times 0.25 = 0.03125$
+
+\textbf{2. 困惑度 (PP)}：
+公式：$PP(S) = P(w_1 \dots w_N)^{-1/N}$
+$N=3$。
+$PP = (0.03125)^{-1/3} = (\frac{1}{32})^{-1/3} = (32)^{1/3} \approx 3.17$
+\end{answer}
+
+\begin{question}{M9 (TF-IDF计算)}
+文档集合有两篇文档：
+D1: "中国 北京"
+D2: "中国 上海"
+计算“北京”一词在 D1 中的 TF-IDF 值。（使用 $\log_{10}$ 计算 IDF）
+\end{question}
+\begin{answer}
+\begin{itemize}
+    \item \textbf{TF (词频)}：在 D1 中，“北京”出现 1 次，总词数 2。$TF = 1/2 = 0.5$（或直接按频次 1）。
+    \item \textbf{IDF (逆文档频率)}：
+    总文档数 $N=2$。
+    出现“北京”的文档数 $df=1$ (仅 D1)。
+    $IDF = \log_{10}(N/df) = \log_{10}(2/1) \approx 0.301$。
+    \item \textbf{TF-IDF}：$0.5 \times 0.301 = 0.1505$。
+\end{itemize}
+\end{answer}
+
+\subsection{五、综合设计题}
+
+\begin{question}{M10}
+\textbf{题目}：设计一个垂直领域（如医疗或法律）的 RAG (检索增强生成) 系统，请详细描述各个模块的关键技术选型及优化策略。
+\end{question}
+\begin{answer}
+\textbf{设计方案：医疗领域 RAG 系统}
+
+\textbf{1. 索引模块 (Indexing)}：
+\begin{itemize}
+    \item \textbf{数据清洗}：清洗医疗指南、药品说明书。去除无关页眉页脚。
+    \item \textbf{分块策略 (Chunking)}：由于医疗建议依赖上下文，采用“滑动窗口”切分，并增加 Overlap。或采用 "Small-to-Big" 策略（索引小块句子，检索后召回对应的整段窗口），保证语义完整性。
+    \item \textbf{元数据增强}：为 Chunk 增加元数据（如科室、适用人群、年份），便于过滤。
+\end{itemize}
+
+\textbf{2. 检索模块 (Retrieval)}：
+\begin{itemize}
+    \item \textbf{混合检索 (Hybrid Search)}：
+    \begin{itemize}
+        \item \textbf{关键词检索 (BM25)}：精确匹配药品名、病名（避免Embedding对专有名词理解偏差）。
+        \item \textbf{语义检索 (Dense Vector)}：匹配症状描述的语义相似性。
+        \item 加权融合两者得分。
+    \end{itemize}
+    \item \textbf{重排序 (Re-ranking)}：使用 Cross-Encoder 对初排的 Top-50 文档进行精细打分，筛选 Top-5，显著提升准确率。
+\end{itemize}
+
+\textbf{3. 生成模块 (Generation)}：
+\begin{itemize}
+    \item \textbf{提示词工程}：使用 CoT (思维链)，引导模型“先分析病情，再参考文档，最后给出建议”。
+    \item \textbf{拒答机制}：如果检索到的文档相关性分数过低，模型应回答“无法根据现有资料回答”，防止医疗幻觉。
+\end{itemize}
+
+\textbf{4. 评估 (Evaluation)}：
+使用 \textbf{RAGAS} 框架，重点评估“忠实度 (Faithfulness)”（答案是否违背检索文档）和“答案相关性”。
+\end{answer}
+
+\end{document}

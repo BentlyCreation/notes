@@ -1,10 +1,10 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (TeX Live 2025) (preloaded format=xelatex 2025.9.20)  8 JAN 2026 21:00
+This is XeTeX, Version 3.141592653-2.6-0.999997 (TeX Live 2025) (preloaded format=xelatex 2025.9.20)  19 JAN 2026 20:25
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**c:/Users/Bentley/Documents/notes/nlp_llm
-(c:/Users/Bentley/Documents/notes/nlp_llm.tex
+**c:/Users/Bentley/Desktop/notes/nlp_llm_note/nlp_llm
+(c:/Users/Bentley/Desktop/notes/nlp_llm_note/nlp_llm.tex
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
 (d:/texlive/2025/texmf-dist/tex/latex/ctex/ctexart.cls (d:/texlive/2025/texmf-dist/tex/latex/ctex/config/ctexbackend.cfg
@@ -889,11 +889,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[3])
-\tf@toc=\write5
-\openout5 = `nlp_llm.toc'.
-
-
+[3]
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -902,7 +898,11 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[4]
+[4])
+\tf@toc=\write5
+\openout5 = `nlp_llm.toc'.
+
+
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -957,6 +957,11 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 [10]
+Overfull \hbox (20.57494pt too wide) in paragraph at lines 281--282
+\TU/lmr/bx/n/10.95 (1) \TU/SimSun(0)/b/n/10.95 任 务 定 义[] \TU/SimSun(0)/m/n/10.95 给 定 一 个 多 义 词 $\OML/cmm/m/it/10.95 w$ \TU/SimSun(0)/m/n/10.95 及 其 上 下 文 环 境 $\OML/cmm/m/it/10.95 C$ \TU/lmr/m/n/10.95 (Context)\TU/SimSun(0)/m/n/10.95 ，|  从 候 选 义 项 集 合 $\OML/cmm/m/it/10.95 S \OT1/cmr/m/n/10.95 = \OMS/cmsy/m/n/10.95 f\OML/cmm/m/it/10.95 s[]; s[]; [] ; s[]\OMS/cmsy/m/n/10.95 g$
+ []
+
+
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -967,6 +972,11 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 
 [11]
 
+LaTeX Font Warning: Font shape `TU/SimSun(0)/b/it' undefined
+(Font)              using `TU/SimSun(0)/b/n' instead on input line 310.
+
+
+
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -975,7 +985,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 [12]
-Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 418.
+Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 368.
 
 
 
@@ -1148,6 +1158,11 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 [31]
+Overfull \hbox (6.34418pt too wide) in paragraph at lines 1185--1186
+[]\TU/SimSun(0)/b/n/10.95 缺 陷\TU/SimSun(0)/m/n/10.95 ：|  预 训 练 时 的 \TU/lmr/m/n/10.95 [MASK] \TU/SimSun(0)/m/n/10.95 标 记 在 微 调 时 不 存 在，|  导 致 \TU/SimSun(0)/b/n/10.95 预 训 练\TU/lmr/bx/n/10.95 -\TU/SimSun(0)/b/n/10.95 微 调 不 一 致 \TU/lmr/bx/n/10.95 (Pre-train/Fine-
+ []
+
+
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -1156,11 +1171,140 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[32] (./nlp_llm.aux)
+[32]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[33]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[34]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[35]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[36]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[37]
+
+Package fontspec Info: 
+(fontspec)             Could not resolve font "FangSong/BI" (it probably
+(fontspec)             doesn't exist).
+
+
+Package fontspec Info: 
+(fontspec)             Could not resolve font "FangSong/B" (it probably
+(fontspec)             doesn't exist).
+
+
+Package fontspec Info: 
+(fontspec)             Could not resolve font "FangSong/I" (it probably
+(fontspec)             doesn't exist).
+
+
+Package fontspec Info: 
+(fontspec)             Font family 'FangSong(0)' created for font 'FangSong'
+(fontspec)             with options [Script={CJK}].
+(fontspec)              
+(fontspec)              This font family consists of the following NFSS
+(fontspec)             series/shapes:
+(fontspec)              
+(fontspec)             - 'normal' (m/n) with NFSS spec.:
+(fontspec)             <->"FangSong/OT:script=hani;language=dflt;"
+
+
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[38]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[39]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[40]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[41]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[42]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[43] (./nlp_llm.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2022/08/05>
  ***********
+
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
 
 LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
@@ -1171,16 +1315,16 @@ Package rerunfilecheck Warning: File `nlp_llm.out' has changed.
 (rerunfilecheck)                or use package `bookmark'.
 
 Package rerunfilecheck Info: Checksums for `nlp_llm.out':
-(rerunfilecheck)             Before: 91A061E2482EA385FD35E1016FB8CC58;17421
-(rerunfilecheck)             After:  156590827B2BABE8B3ADEE4F25181A6A;18761.
+(rerunfilecheck)             Before: EC8C5863027AF90DD8944E2E0100BB34;27747
+(rerunfilecheck)             After:  3218EF19246FB3EBA5729D5F45821EE9;28654.
  ) 
 Here is how much of TeX's memory you used:
- 31193 strings out of 473832
- 685330 string characters out of 5733158
- 1069240 words of memory out of 5000000
- 53759 multiletter control sequences out of 15000+600000
- 570973 words of font info for 107 fonts, out of 8000000 for 9000
+ 31399 strings out of 473832
+ 695249 string characters out of 5733158
+ 1080453 words of memory out of 5000000
+ 53939 multiletter control sequences out of 15000+600000
+ 571093 words of font info for 122 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 102i,12n,111p,1223b,561s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,12n,111p,1234b,561s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on nlp_llm.pdf (32 pages).
+Output written on nlp_llm.pdf (43 pages).

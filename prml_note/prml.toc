@@ -1,65 +1,136 @@
-\contentsline {section}{\numberline {1}绪论 \small {(3学时 向世明)}}{5}{section.1}%
-\contentsline {subsection}{\numberline {1.1}模式识别基础}{5}{subsection.1.1}%
-\contentsline {subsection}{\numberline {1.2}模式识别系统流程}{5}{subsection.1.2}%
-\contentsline {subsection}{\numberline {1.3}模式识别系统设计}{5}{subsection.1.3}%
-\contentsline {subsection}{\numberline {1.4}模式识别方法分类}{6}{subsection.1.4}%
-\contentsline {subsection}{\numberline {1.5}本课程内容体系}{6}{subsection.1.5}%
-\contentsline {section}{\numberline {2}贝叶斯决策理论 \small {(3学时 向世明)}}{7}{section.2}%
-\contentsline {subsection}{\numberline {2.1}核心公式}{7}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}最小错误率贝叶斯决策}{7}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}最小风险贝叶斯决策}{7}{subsection.2.3}%
-\contentsline {subsection}{\numberline {2.4}带拒识的贝叶斯决策 (Reject Option)}{8}{subsection.2.4}%
-\contentsline {subsection}{\numberline {2.5}开放集识别 (Open Set Recognition)}{8}{subsection.2.5}%
-\contentsline {subsection}{\numberline {2.6}分类器设计}{9}{subsection.2.6}%
-\contentsline {subsection}{\numberline {2.7}高斯密度下的判别函数}{9}{subsection.2.7}%
-\contentsline {subsubsection}{\numberline {2.7.1}情形一：$\Sigma _i = \sigma ^2 I$（各特征独立且方差相等）}{10}{subsubsection.2.7.1}%
-\contentsline {subsubsection}{\numberline {2.7.2}情形二：$\Sigma _i = \Sigma $（协方差矩阵相等）}{10}{subsubsection.2.7.2}%
-\contentsline {subsubsection}{\numberline {2.7.3}情形三：$\Sigma _i \neq \Sigma _j$（协方差矩阵任意）}{11}{subsubsection.2.7.3}%
-\contentsline {subsection}{\numberline {2.8}错误率分析}{11}{subsection.2.8}%
-\contentsline {subsection}{\numberline {2.9}离散特征贝叶斯分类}{12}{subsection.2.9}%
-\contentsline {subsubsection}{\numberline {2.9.1}独立二值特征 (Independent Binary Features)}{12}{subsubsection.2.9.1}%
-\contentsline {subsection}{\numberline {2.10}复合模式分类 (Compound Decision)}{13}{subsection.2.10}%
-\contentsline {subsection}{\numberline {2.11}多分类器融合 (Multi-classifier Fusion)}{13}{subsection.2.11}%
-\contentsline {subsection}{\numberline {2.12}模式分类与特征的关系}{14}{subsection.2.12}%
-\contentsline {section}{\numberline {3}概率密度函数估计 \small {(6学时 张燕明)}}{15}{section.3}%
-\contentsline {subsection}{\numberline {3.1}基本概念}{15}{subsection.3.1}%
-\contentsline {subsection}{\numberline {3.2}最大似然估计 (Maximum Likelihood Estimation, MLE)}{15}{subsection.3.2}%
-\contentsline {subsection}{\numberline {3.3}贝叶斯估计 (Bayesian Estimation)}{15}{subsection.3.3}%
-\contentsline {subsection}{补充笔记：贝叶斯估计公式详解}{16}{subsection*.4}%
-\contentsline {subsection}{\numberline {3.4}正态分布下的贝叶斯估计}{18}{subsection.3.4}%
-\contentsline {subsection}{\numberline {3.5}贝叶斯学习 (Bayesian Learning)}{18}{subsection.3.5}%
-\contentsline {subsubsection}{\numberline {3.5.1}1. 迭代更新公式}{18}{subsubsection.3.5.1}%
-\contentsline {subsubsection}{\numberline {3.5.2}2. 实例：均匀分布边界的估计}{18}{subsubsection.3.5.2}%
-\contentsline {subsection}{\numberline {3.6}特征维数问题}{20}{subsection.3.6}%
-\contentsline {subsection}{\numberline {3.7}期望最大化 (EM) 算法}{20}{subsection.3.7}%
-\contentsline {subsubsection}{\numberline {3.7.1}1. 经典案例：三硬币模型 (The Three Coins Example)}{20}{subsubsection.3.7.1}%
-\contentsline {subsubsection}{\numberline {3.7.2}2. EM 算法在高斯混合模型 (GMM) 中的应用}{21}{subsubsection.3.7.2}%
-\contentsline {paragraph}{A. 什么是 GMM 与 隐变量？}{21}{paragraph*.7}%
-\contentsline {paragraph}{B. EM 算法求解步骤}{21}{paragraph*.8}%
-\contentsline {subsubsection}{\numberline {3.7.3}3. EM 算法总结}{22}{subsubsection.3.7.3}%
-\contentsline {subsection}{\numberline {3.8}隐马尔可夫模型 (HMM) 详解与实例}{22}{subsection.3.8}%
-\contentsline {subsubsection}{\numberline {3.8.1}1. 具体的模型定义与矩阵实例}{22}{subsubsection.3.8.1}%
-\contentsline {paragraph}{(1) 初始状态分布 $\pi $ (Initial Distribution)}{22}{paragraph*.9}%
-\contentsline {paragraph}{(2) 状态转移矩阵 $A$ (Transition Matrix)}{23}{paragraph*.10}%
-\contentsline {paragraph}{(3) 观测概率矩阵 $B$ (Emission Matrix)}{23}{paragraph*.11}%
-\contentsline {subsubsection}{\numberline {3.8.2}2. 状态转移图 (State Transition Diagram)}{23}{subsubsection.3.8.2}%
-\contentsline {subsubsection}{\numberline {3.8.3}3. HMM 的三个核心问题推导}{23}{subsubsection.3.8.3}%
-\contentsline {paragraph}{问题一：评估 (Evaluation) - 前向算法}{23}{paragraph*.12}%
-\contentsline {paragraph}{问题二：解码 (Decoding) - 维特比算法}{24}{paragraph*.13}%
-\contentsline {paragraph}{问题三：学习 (Learning) - Baum-Welch算法}{24}{paragraph*.14}%
-\contentsline {section}{\numberline {4}非参数法 (Non-parametric Methods) \small {(3学时 张燕明)}}{25}{section.4}%
-\contentsline {subsection}{\numberline {4.1}1. 引言：为什么要用非参数法？}{25}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}2. 概率密度估计的基本原理}{25}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}3. Parzen窗估计 (核密度估计)}{25}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}4. $k_n$-近邻估计 (k-NN Estimation)}{26}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5}5. 最近邻分类器 (Nearest Neighbor Rule)}{27}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}6. 计算复杂度的优化}{27}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}7. 距离度量与切距离}{28}{subsection.4.7}%
-\contentsline {section}{附录：常用 LaTeX 模板}{29}{section*.15}%
-\contentsline {paragraph}{贝叶斯决策规则：}{29}{paragraph*.19}%
-\contentsline {paragraph}{多元正态分布 (Gaussian Density)：}{29}{paragraph*.20}%
-\contentsline {paragraph}{线性判别函数 (Linear Discriminant)：}{29}{paragraph*.21}%
-\contentsline {paragraph}{最大似然估计 (MLE)：}{29}{paragraph*.22}%
-\contentsline {paragraph}{SVM 优化目标 (硬间隔)：}{29}{paragraph*.23}%
-\contentsline {paragraph}{特征值分解 (PCA)：}{29}{paragraph*.24}%
-\contentsline {paragraph}{K-Means 目标函数：}{29}{paragraph*.25}%
+\contentsline {section}{\numberline {1}绪论 \small {(3学时 向世明)}}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}模式识别基础}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}模式识别系统流程}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}模式识别系统设计}{3}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}模式识别方法分类}{4}{subsection.1.4}%
+\contentsline {subsection}{\numberline {1.5}本课程内容体系}{4}{subsection.1.5}%
+\contentsline {section}{\numberline {2}贝叶斯决策理论 \small {(3学时 向世明)}}{5}{section.2}%
+\contentsline {subsection}{\numberline {2.1}核心公式}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}最小错误率贝叶斯决策}{5}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}最小风险贝叶斯决策}{5}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}带拒识的贝叶斯决策 (Reject Option)}{6}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}开放集识别 (Open Set Recognition)}{6}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}分类器设计}{7}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.7}高斯密度下的判别函数}{7}{subsection.2.7}%
+\contentsline {subsubsection}{\numberline {2.7.1}情形一：$\Sigma _i = \sigma ^2 I$（各特征独立且方差相等）}{8}{subsubsection.2.7.1}%
+\contentsline {subsubsection}{\numberline {2.7.2}情形二：$\Sigma _i = \Sigma $（协方差矩阵相等）}{8}{subsubsection.2.7.2}%
+\contentsline {subsubsection}{\numberline {2.7.3}情形三：$\Sigma _i \neq \Sigma _j$（协方差矩阵任意）}{9}{subsubsection.2.7.3}%
+\contentsline {subsection}{\numberline {2.8}错误率分析}{9}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}离散特征贝叶斯分类}{10}{subsection.2.9}%
+\contentsline {subsubsection}{\numberline {2.9.1}独立二值特征 (Independent Binary Features)}{10}{subsubsection.2.9.1}%
+\contentsline {subsection}{\numberline {2.10}复合模式分类 (Compound Decision)}{11}{subsection.2.10}%
+\contentsline {subsection}{\numberline {2.11}多分类器融合 (Multi-classifier Fusion)}{11}{subsection.2.11}%
+\contentsline {subsection}{\numberline {2.12}模式分类与特征的关系}{12}{subsection.2.12}%
+\contentsline {section}{\numberline {3}概率密度函数估计 \small {(6学时 张燕明)}}{13}{section.3}%
+\contentsline {subsection}{\numberline {3.1}基本概念}{13}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}最大似然估计 (Maximum Likelihood Estimation, MLE)}{13}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}贝叶斯估计 (Bayesian Estimation)}{13}{subsection.3.3}%
+\contentsline {subsection}{补充笔记：贝叶斯估计公式详解}{14}{subsection*.4}%
+\contentsline {subsection}{\numberline {3.4}正态分布下的贝叶斯估计}{16}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}贝叶斯学习 (Bayesian Learning)}{16}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}1. 迭代更新公式}{16}{subsubsection.3.5.1}%
+\contentsline {subsubsection}{\numberline {3.5.2}2. 实例：均匀分布边界的估计}{16}{subsubsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.6}特征维数问题}{18}{subsection.3.6}%
+\contentsline {subsection}{\numberline {3.7}期望最大化 (EM) 算法}{18}{subsection.3.7}%
+\contentsline {subsubsection}{\numberline {3.7.1}1. 经典案例：三硬币模型 (The Three Coins Example)}{18}{subsubsection.3.7.1}%
+\contentsline {subsubsection}{\numberline {3.7.2}2. EM 算法在高斯混合模型 (GMM) 中的应用}{19}{subsubsection.3.7.2}%
+\contentsline {paragraph}{A. 什么是 GMM 与 隐变量？}{19}{paragraph*.7}%
+\contentsline {paragraph}{B. EM 算法求解步骤}{19}{paragraph*.8}%
+\contentsline {subsubsection}{\numberline {3.7.3}3. EM 算法总结}{20}{subsubsection.3.7.3}%
+\contentsline {subsection}{\numberline {3.8}隐马尔可夫模型 (HMM) 详解与实例}{20}{subsection.3.8}%
+\contentsline {subsubsection}{\numberline {3.8.1}1. 具体的模型定义与矩阵实例}{20}{subsubsection.3.8.1}%
+\contentsline {paragraph}{(1) 初始状态分布 $\pi $ (Initial Distribution)}{20}{paragraph*.9}%
+\contentsline {paragraph}{(2) 状态转移矩阵 $A$ (Transition Matrix)}{21}{paragraph*.10}%
+\contentsline {paragraph}{(3) 观测概率矩阵 $B$ (Emission Matrix)}{21}{paragraph*.11}%
+\contentsline {subsubsection}{\numberline {3.8.2}2. 状态转移图 (State Transition Diagram)}{21}{subsubsection.3.8.2}%
+\contentsline {subsubsection}{\numberline {3.8.3}3. HMM 的三个核心问题推导}{21}{subsubsection.3.8.3}%
+\contentsline {paragraph}{问题一：评估 (Evaluation) - 前向算法}{21}{paragraph*.12}%
+\contentsline {paragraph}{问题二：解码 (Decoding) - 维特比算法}{22}{paragraph*.13}%
+\contentsline {paragraph}{问题三：学习 (Learning) - Baum-Welch算法}{22}{paragraph*.14}%
+\contentsline {section}{\numberline {4}非参数法 (Non-parametric Methods) \small {(3学时 张燕明)}}{23}{section.4}%
+\contentsline {subsection}{\numberline {4.1}1. 引言：为什么要用非参数法？}{23}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}2. 概率密度估计的基本原理}{23}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}3. Parzen窗估计 (核密度估计)}{23}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}4. $k_n$-近邻估计 (k-NN Estimation)}{24}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}5. 最近邻分类器 (Nearest Neighbor Rule)}{25}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}6. 计算复杂度的优化}{25}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}7. 距离度量与切距离}{26}{subsection.4.7}%
+\contentsline {section}{\numberline {5}线性分类器设计 \small {(3学时 张燕明)}}{27}{section.5}%
+\contentsline {subsection}{\numberline {5.1}引言}{27}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}线性判别函数与决策面}{27}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}广义线性判别函数}{27}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}感知准则函数 (Perceptron)}{28}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}松驰方法 (Relaxation Procedures)}{28}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}线性最小二乘方法 (MSE)}{29}{subsection.5.6}%
+\contentsline {paragraph}{Ho-Kashyap 算法：}{29}{paragraph*.15}%
+\contentsline {subsection}{\numberline {5.7}多类线性判别函数}{29}{subsection.5.7}%
+\contentsline {section}{\numberline {6}神经网络和深度学习 \small {(9学时 张燕明)}}{31}{section.6}%
+\contentsline {subsection}{\numberline {6.1}人工神经网络发展历程}{31}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}人工神经网络基础}{31}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}单层前馈神经网络 (Perceptron)}{32}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}多层感知器与误差反向传播算法 (MLP \& BP)}{32}{subsection.6.4}%
+\contentsline {subsection}{\numberline {6.5}BP算法讨论与优化}{32}{subsection.6.5}%
+\contentsline {subsection}{\numberline {6.6}反馈神经网络 (Hopfield Network)}{33}{subsection.6.6}%
+\contentsline {subsection}{\numberline {6.7}径向基函数网络 (RBF)}{33}{subsection.6.7}%
+\contentsline {subsection}{\numberline {6.8}自组织映射 (SOM)}{34}{subsection.6.8}%
+\contentsline {subsection}{\numberline {6.9}深度学习简介}{34}{subsection.6.9}%
+\contentsline {subsection}{\numberline {6.10}波尔兹曼机 (Boltzmann Machine)}{34}{subsection.6.10}%
+\contentsline {subsection}{\numberline {6.11}自编码器 (Autoencoder)}{35}{subsection.6.11}%
+\contentsline {subsection}{\numberline {6.12}卷积神经网络 (CNN)}{35}{subsection.6.12}%
+\contentsline {subsection}{\numberline {6.13}循环神经网络 (RNN) 与 LSTM}{35}{subsection.6.13}%
+\contentsline {subsection}{\numberline {6.14}注意力机制与 Transformer}{36}{subsection.6.14}%
+\contentsline {subsection}{\numberline {6.15}图神经网络 (GNN)}{36}{subsection.6.15}%
+\contentsline {section}{\numberline {7}特征提取与选择 \small {(6学时 张燕明)}}{37}{section.7}%
+\contentsline {subsection}{\numberline {7.1}维数灾难 (Curse of Dimensionality)}{37}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}特征提取 (Feature Extraction)}{37}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}线性方法}{37}{subsection.7.3}%
+\contentsline {subsubsection}{\numberline {7.3.1}1. 主成分分析 (PCA)}{37}{subsubsection.7.3.1}%
+\contentsline {subsubsection}{\numberline {7.3.2}2. 线性判别分析 (Fisher LDA)}{38}{subsubsection.7.3.2}%
+\contentsline {subsubsection}{\numberline {7.3.3}3. 多维缩放 (MDS)}{38}{subsubsection.7.3.3}%
+\contentsline {subsection}{\numberline {7.4}非线性方法 (流形学习)}{38}{subsection.7.4}%
+\contentsline {subsection}{\numberline {7.5}特征选择 (Feature Selection)}{38}{subsection.7.5}%
+\contentsline {section}{\numberline {8}模型选择 \small {(3学时 张燕明)}}{40}{section.8}%
+\contentsline {subsection}{\numberline {8.1}模型选择原则}{40}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}模型评价标准}{40}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}基于偏差和方差的分类器设计准则}{40}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}分类器集成 (Ensemble Learning)}{41}{subsection.8.4}%
+\contentsline {subsection}{\numberline {8.5}Adaboost学习方法及其应用}{41}{subsection.8.5}%
+\contentsline {subsubsection}{\numberline {8.5.1}1. Adaboost 算法流程}{41}{subsubsection.8.5.1}%
+\contentsline {subsubsection}{\numberline {8.5.2}2. 理论性质}{42}{subsubsection.8.5.2}%
+\contentsline {subsubsection}{\numberline {8.5.3}3. 应用：Viola-Jones 人脸检测}{42}{subsubsection.8.5.3}%
+\contentsline {section}{\numberline {9}聚类分析 \small {(6学时 张燕明)}}{43}{section.9}%
+\contentsline {subsection}{\numberline {9.1}基本概念}{43}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}K均值聚类 (K-Means)}{43}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}模糊K均值聚类 (GMM \& EM)}{43}{subsection.9.3}%
+\contentsline {subsection}{\numberline {9.4}层次聚类 (Hierarchical Clustering)}{44}{subsection.9.4}%
+\contentsline {subsection}{\numberline {9.5}谱聚类 (Spectral Clustering)}{44}{subsection.9.5}%
+\contentsline {subsection}{\numberline {9.6}在线聚类与竞争学习}{45}{subsection.9.6}%
+\contentsline {subsection}{\numberline {9.7}集成聚类 (Ensemble Clustering)}{45}{subsection.9.7}%
+\contentsline {section}{\numberline {10}支持向量机与核方法 \small {(6学时 向世明)}}{46}{section.10}%
+\contentsline {subsection}{\numberline {10.1}统计学习理论基础}{46}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}线性可分支持向量机 (Hard Margin SVM)}{46}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}线性支持向量机 (Soft Margin SVM)}{46}{subsection.10.3}%
+\contentsline {subsection}{\numberline {10.4}对偶理论与核技巧}{47}{subsection.10.4}%
+\contentsline {subsubsection}{\numberline {10.4.1}对偶问题 (Dual Problem)}{47}{subsubsection.10.4.1}%
+\contentsline {subsubsection}{\numberline {10.4.2}核技巧 (Kernel Trick)}{47}{subsubsection.10.4.2}%
+\contentsline {subsubsection}{\numberline {10.4.3}算法实现：SVM预测流程}{47}{subsubsection.10.4.3}%
+\contentsline {subsection}{\numberline {10.5}SVM的扩展}{48}{subsection.10.5}%
+\contentsline {section}{\numberline {11}决策树方法 \small {(3学时 向世明)}}{49}{section.11}%
+\contentsline {subsection}{\numberline {11.1}特征选择准则}{49}{subsection.11.1}%
+\contentsline {subsection}{\numberline {11.2}决策树生成算法}{49}{subsection.11.2}%
+\contentsline {subsection}{\numberline {11.3}决策树剪枝 (Pruning)}{50}{subsection.11.3}%
+\contentsline {subsection}{\numberline {11.4}随机森林 (Random Forests)}{50}{subsection.11.4}%
+\contentsline {section}{\numberline {12}模式识别前沿趋势 \small {(3学时 向世明)}}{52}{section.12}%
+\contentsline {subsection}{\numberline {12.1}课程内容总体回顾}{52}{subsection.12.1}%
+\contentsline {subsection}{\numberline {12.2}模式识别发展现状与新动态}{52}{subsection.12.2}%
+\contentsline {subsection}{\numberline {12.3}模式识别中的挑战性问题}{52}{subsection.12.3}%
+\contentsline {section}{\numberline {13}考核 \small {(6学时 向世明)}}{53}{section.13}%
+\contentsline {subsection}{\numberline {13.1}考试+答疑}{53}{subsection.13.1}%
+\contentsline {section}{附录：常用 LaTeX 模板}{54}{section*.16}%
+\contentsline {paragraph}{贝叶斯决策规则：}{54}{paragraph*.20}%
+\contentsline {paragraph}{多元正态分布 (Gaussian Density)：}{54}{paragraph*.21}%
+\contentsline {paragraph}{线性判别函数 (Linear Discriminant)：}{54}{paragraph*.22}%
+\contentsline {paragraph}{最大似然估计 (MLE)：}{54}{paragraph*.23}%
+\contentsline {paragraph}{SVM 优化目标 (硬间隔)：}{54}{paragraph*.24}%
+\contentsline {paragraph}{特征值分解 (PCA)：}{54}{paragraph*.25}%
+\contentsline {paragraph}{K-Means 目标函数：}{54}{paragraph*.26}%

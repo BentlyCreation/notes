@@ -131,6 +131,7 @@ NLP 技术发展主要经历了三个范式的演变：
 \end{itemize}
 \newpage
 
+
 \section{统计学习基础 \small{(4学时 宗成庆)}}
 
 \begin{note}[本章复习重点]
@@ -215,8 +216,8 @@ $$ H(X) = - \sum_{x} P(x) \log_2 P(x) $$
 \end{itemize}
 
 \subsubsection{困惑度 (Perplexity)}
-语言模型评价指标。$PP(S) = 2^{H(L)}$。困惑度越小，模型越好。
-
+语言模型评价指标。$P P_q=2^{H(L, q)} \approx 2^{-\frac{1}{n} \log q\left(x_1^n\right)}=\left[q\left(x_1^n\right)\right]^{-\frac{1}{n}}$。困惑度越小，模型越好。
+其中 $H(L, q)$ 为语言 $L$ 在模型 $q$ 下的交叉熵，这里利用了随机过程的遍历性假设去近似。
 % ==========================================================
 % 4. 统计学习概念
 % ==========================================================
@@ -237,130 +238,19 @@ $$ H(X) = - \sum_{x} P(x) \log_2 P(x) $$
     \item \textbf{典型模型}：SVM, MaxEnt, CRF, Neural Networks。
     \item \textbf{特点}：准确率通常更高，可以灵活利用各种上下文特征（Arbitrary overlapping features）；但训练开销通常较大。
 \end{itemize}
-\newpage
 % ==========================================================
 % 5. 最大熵模型 (Maximum Entropy)
-% ==========================================================
-\section{统计学习基础 \small{(4学时 宗成庆)}}
-
-\begin{note}[本章核心考点导航]
-\begin{enumerate}
-    \item \textbf{基础理论}：语言的随机过程假设、齐夫定律（长尾效应）。
-    \item \textbf{信息论公式}：必须背诵熵、联合熵、条件熵、互信息的定义式及其推导关系。
-    \item \textbf{模型分类}：生成式 (HMM) vs 判别式 (MaxEnt, CRF, SVM) 的区别。
-    \item \textbf{最大熵模型}：基于约束的熵最大化原理、GIS 算法。
-    \item \textbf{条件随机场 (CRF)}：克服标注偏置问题、特征函数设计、Viterbi 解码算法（重点）。
-\end{enumerate}
-\end{note}
-
-% ==========================================================
-% 1. 概率论略览
-% ==========================================================
-\subsection{概率论与随机过程}
-
-\subsubsection{语言的随机过程假设}
-自然语言被视为一个随机过程 $\{\xi_t, t \in T\}$。为了使统计方法可行，NLP 通常引入两个强假设：
-\begin{enumerate}
-    \item \textbf{稳态性 (Stationarity)}：语言的统计特性（如词频、共现概率）不随时间推移而改变。即 $P(w_t) \approx P(w_{t+k})$。
-    \item \textbf{遍历性 (Ergodicity)}：单个样本在长时间内的统计特性等于所有样本在同一时刻的统计特性。
-    \begin{itemize}
-        \item \textit{物理意义}：我们可以通过在大规模语料库（空间）上的统计频率，来近似语言（时间）的真实概率分布。
-    \end{itemize}
-\end{enumerate}
-
-\subsubsection{齐夫定律 (Zipf's Law)}
-\begin{itemize}
-    \item \textbf{定义}：单词在语料库中的频率 $f$ 与其排名 $r$ 成反比。
-    \begin{equation}
-        f \times r = C \quad \Rightarrow \quad \log f = \log C - \log r
-    \end{equation}
-    在双对数坐标系下，表现为一条斜率为负的直线。
-    \item \textbf{长尾效应 (Long Tail)}：
-    \begin{itemize}
-        \item \textbf{高频词}：极少数词（如 "the", "的"）覆盖了绝大部分文本。
-        \item \textbf{低频词}：绝大多数词汇处于“长尾”部分，频率极低。
-        \item \textbf{NLP 困境}：\textbf{数据稀疏 (Data Sparsity)} 是统计 NLP 的核心难题。无论语料库多大，总会有未登录词 (OOV)。
-    \end{itemize}
-\end{itemize}
-
-% ==========================================================
-% 2. 信息论基础 (重点公式)
-% ==========================================================
-\subsection{信息论基础}
-
-\subsubsection{熵 (Entropy)}
-衡量随机变量 $X$ 的平均不确定性。
-\begin{equation}
-    H(X) = - \sum_{x \in X} p(x) \log_2 p(x) \quad (\text{单位: bits})
-\end{equation}
-\textit{注：常识数据——汉字的熵约为 9.71 bits，英文字母约为 4.03 bits。}
-
-\subsubsection{联合熵 (Joint Entropy)}
-描述一对随机变量 $(X, Y)$ 平均所需要的信息量。
-\begin{equation}
-    H(X, Y) = - \sum_{x \in X} \sum_{y \in Y} p(x,y) \log_2 p(x,y)
-\end{equation}
-
-\subsubsection{条件熵 (Conditional Entropy) [补全]}
-在已知随机变量 $X$ 的情况下，随机变量 $Y$ 的不确定性。
-\begin{equation}
-    H(Y|X) = \sum_{x \in X} p(x) H(Y|X=x) = - \sum_{x \in X} \sum_{y \in Y} p(x,y) \log_2 p(y|x)
-\end{equation}
-\textbf{链式法则 (Chain Rule)}：联合熵等于边缘熵加上条件熵。
-\begin{equation}
-    H(X, Y) = H(X) + H(Y|X) = H(Y) + H(X|Y)
-\end{equation}
-
-\subsubsection{互信息 (Mutual Information)}
-衡量两个变量的相关性，即知道 $Y$ 后 $X$ 不确定性的减少量。
-\begin{align}
-    I(X; Y) &= H(X) - H(X|Y) \\
-            &= \sum_{x,y} p(x,y) \log_2 \frac{p(x,y)}{p(x)p(y)}
-\end{align}
-\begin{itemize}
-    \item \textbf{性质}：$I(X; Y) \ge 0$。当且仅当 $X, Y$ 独立时取 0。
-    \item \textbf{应用}：在汉语分词中，点式互信息 $PMI(x,y)$ 常用于判断两个字是否成词（结合紧密则 PMI 高）。
-\end{itemize}
-
-\subsubsection{交叉熵 (Cross Entropy) 与 相对熵 (KL Divergence)}
-\begin{itemize}
-    \item \textbf{相对熵 (KL散度)}：衡量两个分布 $P$ (真实) 和 $Q$ (模型) 的距离（非对称）。
-    $$ D_{KL}(p || q) = \sum_{x} p(x) \log \frac{p(x)}{q(x)} $$
-    \item \textbf{交叉熵}：NLP 模型训练常用的损失函数。
-    $$ H(p, q) = H(p) + D_{KL}(p || q) = - \sum_{x} p(x) \log q(x) $$
-    \item \textbf{困惑度 (Perplexity)}：$PP = 2^{H(L, q)}$。语言模型评价指标，越小越好。
-\end{itemize}
-
-% ==========================================================
-% 3. 统计学习概念
-% ==========================================================
-\subsection{统计学习模型分类}
-
-\begin{itemize}
-    \item \textbf{生成式模型 (Generative Model)}：
-    \begin{itemize}
-        \item 建模联合概率 $P(X, Y)$，然后由贝叶斯公式求 $P(Y|X)$。
-        \item 代表：\textbf{HMM (隐马尔可夫)}, Naive Bayes, n-gram。
-        \item 优点：收敛快；缺点：难以处理复杂的重叠特征。
-    \end{itemize}
-    \item \textbf{判别式模型 (Discriminative Model)}：
-    \begin{itemize}
-        \item 直接建模条件概率 $P(Y|X)$ 或决策函数 $f(X)$。
-        \item 代表：\textbf{CRF (条件随机场)}, MaxEnt (最大熵), SVM, 神经网络。
-        \item 优点：准确率通常更高，可灵活使用任意全局特征（如“当前词的词性取决于整句话的句法结构”）。
-    \end{itemize}
-\end{itemize}
-
-% ==========================================================
-% 4. 最大熵模型 (Maximum Entropy)
 % ==========================================================
 \subsection{最大熵模型 (MaxEnt)}
 
 \subsubsection{核心原理}
 \begin{quote}
-    \textbf{“承认无知，保留最大不确定性”}：在满足所有已知约束条件（特征期望一致）的模型集合中，选择熵最大的那个模型。
+    \textbf{“承认无知，保留最大不确定性”}：在满足所有已知约束条件（特征期望一致）的模型集合中，选择熵最大的那个模型。这里实际上指的是模型的条件熵 $H(Y|X)$ 最大。
 \end{quote}
 
+\subsection{在NLP的应用：词义消解}
+最大熵模型常用于词义消解 (Word Sense Disambiguation, WSD)，通过结合多种上下文特征，选择最合适的词义标签。
+为什么使用 MaxEnt？那是因为它能够灵活地整合多种特征信息，同时避免对未观察到的事件做出过于自信的预测。
 \subsubsection{数学定义}
 \begin{itemize}
     \item \textbf{特征函数} $f_i(x,y)$：二值函数，描述 $(x,y)$ 是否满足某条件。
@@ -369,24 +259,84 @@ $$ H(X) = - \sum_{x} P(x) \log_2 P(x) $$
         \sum_{x,y} \tilde{P}(x)P(y|x)f_i(x,y) = \sum_{x,y} \tilde{P}(x,y)f_i(x,y)
     \end{equation}
     \item \textbf{最终形式} (对数线性模型)：
-    利用拉格朗日乘子法求解，得到：
+    利用拉格朗日乘子法求解（证明可见PPT或者李航机器学习方法第八章），得到：
     \begin{equation}
         P_w(y|x) = \frac{1}{Z(x)} \exp\left( \sum_{i=1}^{k} \lambda_i f_i(x,y) \right)
     \end{equation}
-\end{itemize}
-
-\subsubsection{参数估计 (GIS 算法)}
-\textbf{通用迭代尺度法 (GIS)} 是一种专门用于训练 MaxEnt 参数 $\lambda_i$ 的迭代算法。
-\begin{itemize}
-    \item \textbf{核心思路}：通过不断修正参数 $\lambda$，使得模型特征期望 $E_P$ 逼近经验期望 $\tilde{E}$。
-    \item \textbf{更新公式}：
-    $$ \lambda_i^{(t+1)} = \lambda_i^{(t)} + \frac{1}{C} \ln \frac{\tilde{E}[f_i]}{E^{(t)}[f_i]} $$
-    其中 $C$ 是特征总数常数（若不满足常数需引入松弛特征）。
-    \item \textbf{局限}：收敛极慢。现代通常使用 L-BFGS (拟牛顿法) 代替 GIS。
+    其中 $Z(x)$ 为归一化因子，$\lambda_i$ 为特征权重参数。$Z(x)$ 确保对所有可能的 $y$ 值，条件概率和为1。
+    具体公式为:
+    \begin{equation}
+        Z(x) = \sum_{y} \exp\left( \sum_{i=1}^{k} \lambda_i f_i(x,y) \right)
+    \end{equation}
+    经过观察，这跟softmax函数的形式是一样的。更一般的，跟多类逻辑回归是一样的。区别在于最大熵的特征是特征函数，而逻辑回归的特征是输入向量。
 \end{itemize}
 
 % ==========================================================
-% 5. 条件随机场 (CRF)
+% 3. 最大熵在词义消歧(WSD)中的应用 (详细展开)
+% ==========================================================
+\subsubsection{3. 应用实例：词义消歧 (WSD)}
+词义消歧是 MaxEnt 最经典的应用场景之一。
+
+\paragraph{(1) 任务定义}
+给定一个多义词 $w$ 及其上下文环境 $C$ (Context)，从候选义项集合 $S = \{s_1, s_2, \dots, s_k\}$ 中选择最合适的义项 $\hat{s}$。
+$$ \hat{s} = \arg\max_{s \in S} P(s|C) $$
+
+\paragraph{(2) 特征设计 (Feature Selection)}
+这是 MaxEnt 的核心优势，可以灵活融合多种特征。假设我们要判断多义词“\textbf{打}”在句子中的含义。
+\begin{itemize}
+    \item \textbf{上下文词特征}：
+    $$ f_1(C, s) = \begin{cases} 1, & \text{若上下文中有“篮球” 且 } s=\text{“play”} \\ 0, & \text{否则} \end{cases} $$
+    \item \textbf{词性特征}：
+    $$ f_2(C, s) = \begin{cases} 1, & \text{若“打”后面跟名词(NN) 且 } s=\text{“hit/beat”} \\ 0, & \text{否则} \end{cases} $$
+    \item \textbf{搭配特征}：
+    $$ f_3(C, s) = \begin{cases} 1, & \text{若宾语是“毛衣” 且 } s=\text{“knit”} \\ 0, & \text{否则} \end{cases} $$
+\end{itemize}
+
+\paragraph{(3) 决策过程}
+对于一个新的句子包含“打”，模型根据所有激活的特征函数 $f_i$ 及其训练好的权重 $\lambda_i$，计算每个义项的概率：
+$$ P(\text{play}|C) \propto \exp(\lambda_1 \cdot 1 + \lambda_2 \cdot 0 + \dots) $$
+$$ P(\text{knit}|C) \propto \exp(\lambda_1 \cdot 0 + \dots + \lambda_3 \cdot 1) $$
+最后取概率最大的义项。
+
+% ==========================================================
+% 4. 参数估计：GIS 算法 (详细步骤)
+% ==========================================================
+\subsubsection{4. 参数训练：通用迭代尺度法 (GIS)}
+\textbf{GIS (Generalized Iterative Scaling)} 算法用于寻找最优参数 $\lambda^*$。
+
+\paragraph{前提条件}
+GIS 算法要求所有特征函数之和为常数 $C$：
+$$ \sum_i f_i(x, y) = C \quad (\text{对任意 } x,y) $$
+\textit{注：如果实际特征不满足此条件，需定义一个\textbf{松弛特征 (Slack Feature)} $f_{k+1}$ 补足，使得 $\sum_{i=1}^{k+1} f_i(x,y) = C$。}
+
+\paragraph{算法流程}
+\begin{enumerate}
+    \item \textbf{初始化}：设置 $\lambda_i^{(0)} = 0$ (或任意常数)，$t=0$。
+    \item \textbf{计算经验期望} (Fixed，只需算一次)：
+    $$ \tilde{E}(f_i) = \frac{1}{N} \sum_{j=1}^N f_i(x_j, y_j) $$
+    \item \textbf{迭代循环} (直到收敛)：
+    \begin{enumerate}
+        \item 基于当前参数 $\lambda^{(t)}$，计算\textbf{模型期望}：
+        $$ E^{(t)}(f_i) = \sum_{x} \tilde{P}(x) \sum_{y} P_{\lambda^{(t)}}(y|x) f_i(x,y) $$
+        \item \textbf{更新参数} $\lambda_i$：
+        \begin{equation}
+            \lambda_i^{(t+1)} = \lambda_i^{(t)} + \frac{1}{C} \ln \frac{\tilde{E}(f_i)}{E^{(t)}(f_i)}
+        \end{equation}
+        \textit{物理意义：如果观察到的特征次数 $\tilde{E}$ 比模型预测的 $E^{(t)}$ 多，就增加该特征的权重 $\lambda$，反之减少。}
+        \item 更新 $t \leftarrow t+1$。
+    \end{enumerate}
+    \item \textbf{输出}：最优参数 $\lambda^*$。
+\end{enumerate}
+
+\paragraph{算法评价}
+GIS 算法简单易懂，保证收敛，但\textbf{收敛速度极慢}。
+\begin{itemize}
+    \item \textbf{改进算法 IIS (改进迭代尺度法)}：解决了 GIS 中 $C$ 必须为常数的限制，加快了步长。
+    \item \textbf{拟牛顿法 (L-BFGS)}：目前工程上最常用的方法，收敛速度远远快于 GIS/IIS。
+\end{itemize}
+
+% ==========================================================
+% 6. 条件随机场 (CRF)
 % ==========================================================
 \subsection{条件随机场 (CRF)}
 
@@ -456,241 +406,1148 @@ Viterbi 本质就是在一个有向图（T列 x N行）中寻找一条边权重�
     \item $\psi$ (Psi): 记录“从哪儿来的”，用于最后倒着找回去。
 \end{itemize}
 \end{note}
-\newpage
 
-\section{隐马尔可夫模型与条件随机场 \small{(3学时 宗成庆)}}
-\subsection{马尔科夫模型}
-\subsection{隐马尔可夫模型（HMM）}
-\subsection{前向算法}
-\subsection{后向算法}
-\subsection{维特比算法}
-\subsection{参数学习}
-\subsection{HMM在NLP中的应用}
-\subsection{条件随机场及其应用}
-\newpage
-
-\section{语言模型 \small{(6学时 张家俊)}}
-
-\begin{note}[本章核心考点]
-\begin{enumerate}
-    \item \textbf{马尔可夫假设}：理解 N-gram 模型如何利用有限历史近似全概率。
-    \item \textbf{参数估计}：掌握最大似然估计 (MLE) 的计算公式及缺陷。
-    \item \textbf{数据平滑}：能够解释为什么需要平滑（数据稀疏），并掌握加1法、Good-Turing、Katz后退、线性插值的基本原理。
-    \item \textbf{评价指标}：困惑度 (Perplexity) 的定义与计算。
-\end{enumerate}
-\end{note}
 
 % ==========================================================
-% 1. N元文法 (N-gram)
+% 补充：基于字标注的分词方法 (重点)
 % ==========================================================
-\subsection{n元文法 (N-gram Model)}
+\subsection{基于CRF的字标注分词方法}
 
-\subsubsection{模型定义}
-语言模型 (Language Model, LM) 的核心任务是计算一个句子（词序列）的概率 $P(S)$，或者根据上下文预测下一个词 $P(w_i|w_1 \dots w_{i-1})$。
-
+\subsubsection{1. 基本思想}
+将分词问题转化为\textbf{序列标注 (Sequence Labeling)} 问题。
+不再直接判断词的边界，而是对句子中的每一个汉字进行分类，判断其在词语中的位置。
 \begin{itemize}
-    \item \textbf{链式法则 (Chain Rule)}：
-    $$ P(S) = P(w_1) P(w_2|w_1) P(w_3|w_1 w_2) \dots P(w_m|w_1 \dots w_{m-1}) = \prod_{i=1}^m P(w_i | w_1 \dots w_{i-1}) $$
-    \item \textbf{问题}：随着句子变长，参数空间呈指数级爆炸（$L^m$），无法直接估计。
+    \item \textbf{输入}：汉字序列 $X = (x_1, x_2, \dots, x_n)$
+    \item \textbf{输出}：标签序列 $Y = (y_1, y_2, \dots, y_n)$
 \end{itemize}
 
-\subsubsection{马尔可夫假设 (Markov Assumption)}
-假设当前词出现的概率只与前面 $n-1$ 个词（历史）相关。
-$$ P(w_i | w_1 \dots w_{i-1}) \approx P(w_i | w_{i-n+1} \dots w_{i-1}) $$
+\subsubsection{2. 标注集 (Tagset)}
+最常用的\textbf{4位标注集 (BMES)}：
+\begin{itemize}
+    \item \textbf{B (Begin)}：词首字。
+    \item \textbf{M (Middle)}：词中字。
+    \item \textbf{E (End)}：词尾字。
+    \item \textbf{S (Single)}：单字词。
+\end{itemize}
 
-\subsubsection{常见模型}
+\subsubsection{3. 标注实例}
+\begin{table}[h]
+    \centering
+    \begin{tabular}{l|c|c|c|c|c|c|c}
+        \hline
+        \textbf{原始句子} & 我 & 爱 & 北 & 京 & 天 & 安 & 门 \\
+        \hline
+        \textbf{分词结果} & 我 & 爱 & 北京 & & 天安门 & & \\
+        \hline
+        \textbf{标注序列} & \textbf{S} & \textbf{S} & \textbf{B} & \textbf{E} & \textbf{B} & \textbf{M} & \textbf{E} \\
+        \hline
+    \end{tabular}
+    \caption{BMES 标注示例}
+\end{table}
+
+\begin{itemize}
+    \item “我”是单字词 $\to$ \textbf{S}
+    \item “北京”是双字词 $\to$ “北”是词首(\textbf{B})，“京”是词尾(\textbf{E})
+    \item “天安门”是三字词 $\to$ “天”(\textbf{B})，“安”(\textbf{M})，“门”(\textbf{E})
+\end{itemize}
+
+\subsubsection{4. 特征模板 (Feature Templates)}
+CRF 的强大之处在于可以利用任意的上下文特征。在字标注分词中，通常使用\textbf{局部窗口}内的字符及其组合作为特征。
+设当前字为 $C_0$，前一个字为 $C_{-1}$，后一个字为 $C_1$。常见的特征模板如下：
+
 \begin{enumerate}
-    \item \textbf{一元文法 (Unigram, n=1)}：词与词相互独立。
-    $$ P(S) \approx \prod_{i=1}^m P(w_i) $$
-    \item \textbf{二元文法 (Bigram, n=2)}：只看前 1 个词（一阶马尔可夫链）。
-    $$ P(S) \approx \prod_{i=1}^m P(w_i | w_{i-1}) $$
-    \item \textbf{三元文法 (Trigram, n=3)}：只看前 2 个词（二阶马尔可夫链）。
-    $$ P(S) \approx \prod_{i=1}^m P(w_i | w_{i-2} w_{i-1}) $$
+    \item \textbf{Unigram 特征 (单字特征)}：
+    \begin{itemize}
+        \item $C_{-1}$ (前一个字是什么？)
+        \item $C_0$ (当前字是什么？)
+        \item $C_1$ (后一个字是什么？)
+    \end{itemize}
+    \textit{例子：对于“天安门”中的“安”($C_0$)，特征 $C_{-1}=$“天” 强烈暗示“安”可能是 M 或 E。}
+    
+    \item \textbf{Bigram 特征 (双字特征)}：
+    \begin{itemize}
+        \item $C_{-1}C_0$ (前字+当前字)
+        \item $C_0C_1$ (当前字+后字)
+        \item $C_{-1}C_1$ (跳跃组合，较少用)
+    \end{itemize}
+    \textit{例子：$C_0C_1=$“安门”，这个组合经常出现在词尾，提示“门”标记为 E。}
 \end{enumerate}
-\textit{注：为了处理句首句尾，通常引入标记 $\langle BOS \rangle$ (Begin) 和 $\langle EOS \rangle$ (End)。}
 
-% ==========================================================
-% 2. 参数估计
-% ==========================================================
-\subsection{参数估计}
+\subsubsection{5. 优势总结}
+相比于传统的机械分词（FMM/BMM），基于 CRF 的字标注方法优势在于：
+\begin{itemize}
+    \item \textbf{解决未登录词 (OOV)}：模型学习的是构词规律（如“\textit{张}”字常做姓氏B，“\textit{伟}”字常做名E），而非死记硬背词典。因此能识别出训练集中没见过的人名、地名。
+    \item \textbf{利用全局信息}：CRF 的全局归一化机制避免了 HMM 的局部最优陷阱。
+\end{itemize}
+\newpage
+
+\section{N元文法模型 \small{(6学时 宗成庆)}}
+
+\begin{note}[本章核心考点]
+\begin{itemize}
+    \item \textbf{核心思想}：利用马尔可夫假设（有限历史）来解决语言模型参数空间爆炸的问题。
+    \item \textbf{计算能力}：必须掌握最大似然估计 (MLE) 的计算方法，以及如何计算句子的概率。
+    \item \textbf{难点突破}：\textbf{数据平滑}。理解“零概率”带来的危害，以及加1法、Good-Turing估计、插值法如何重新分配概率质量（“劫富济贫”）。
+    \item \textbf{应用场景}：拼音输入法（音字转换）是N-gram最直观的应用。
+\end{itemize}
+\end{note}
+
+% =========================================================================
+% 3.1 模型定义
+% =========================================================================
+\subsection{模型定义 (Model Definition)}
+
+\subsubsection{1. 语言模型与链式法则}
+语言模型 (Language Model, LM) 的任务是计算一个句子（词序列）$S = w_1, w_2, \dots, w_m$ 的概率 $P(S)$。
+根据概率论的\textbf{链式法则 (Chain Rule)}，联合概率可以分解为条件概率的乘积：
+\begin{equation}
+    P(S) = P(w_1) \times P(w_2|w_1) \times P(w_3|w_1 w_2) \times \dots \times P(w_m|w_1 \dots w_{m-1})
+\end{equation}
+\textbf{问题}：随着句子变长，历史上下文 $w_1 \dots w_{i-1}$ 的组合空间呈指数级爆炸，导致参数无法估计（数据稀疏）。
+
+\subsubsection{2. 马尔可夫假设 (Markov Assumption)}
+为了解决参数爆炸问题，引入马尔可夫假设：\textbf{当前词出现的概率只与前面 $n-1$ 个词相关}。
+\begin{equation}
+    P(w_i | w_1 \dots w_{i-1}) \approx P(w_i | w_{i-n+1} \dots w_{i-1})
+\end{equation}
+
+\subsubsection{3. 常见 N-gram 模型}
+\begin{itemize}
+    \item \textbf{Unigram (一元文法, n=1)}：词与词相互独立。
+    $$ P(S) \approx \prod_{i=1}^m P(w_i) $$
+    \item \textbf{Bigram (二元文法, n=2)}：只看前 1 个词（一阶马尔可夫链）。
+    $$ P(S) \approx \prod_{i=1}^m P(w_i | w_{i-1}) $$
+    \item \textbf{Trigram (三元文法, n=3)}：只看前 2 个词（二阶马尔可夫链）。
+    $$ P(S) \approx \prod_{i=1}^m P(w_i | w_{i-2} w_{i-1}) $$
+\end{itemize}
+
+\begin{note}[关于 BOS 和 EOS]
+为了使概率分布在句子层面上归一化（即所有可能长度的句子概率之和为1），通常在句首添加 $\langle BOS \rangle$ (Begin Of Sentence)，在句尾添加 $\langle EOS \rangle$ (End Of Sentence)。
+\end{note}
+
+% =========================================================================
+% 3.2 参数估计
+% =========================================================================
+\subsection{参数估计 (Parameter Estimation)}
 
 \subsubsection{最大似然估计 (MLE)}
-利用训练语料的频率统计来近似概率。对于 n-gram 模型，参数 $P(w_i | w_{i-n+1}^{i-1})$ 计算公式为：
+利用训练语料中的频率计数来估计概率。对于 N-gram 模型，其参数估计公式为：
 \begin{equation}
     P_{MLE}(w_i | w_{i-n+1}^{i-1}) = \frac{Count(w_{i-n+1}^{i-1} w_i)}{Count(w_{i-n+1}^{i-1})}
 \end{equation}
-其中：
+即：(历史+当前词) 的共现次数除以 (历史) 的出现次数。
+
+\subsubsection{实例计算 (The "John read Moby Dick" Example)}
+假设训练语料库包含以下3个句子：
+\begin{enumerate}
+    \item $\langle BOS \rangle$ John read Moby Dick $\langle EOS \rangle$
+    \item $\langle BOS \rangle$ Mary read a different book $\langle EOS \rangle$
+    \item $\langle BOS \rangle$ She read a book by Cher $\langle EOS \rangle$
+\end{enumerate}
+
+\textbf{Bigram 概率计算示例}：
 \begin{itemize}
-    \item 分子：$w_{i-n+1} \dots w_i$ (n个词) 在语料中共同出现的次数。
-    \item 分母：$w_{i-n+1} \dots w_{i-1}$ (前 n-1 个词) 在语料中出现的次数。
+    \item \textbf{计算 $P(read | John)$}：
+    \begin{itemize}
+        \item $Count(John) = 1$
+        \item $Count(John, read) = 1$
+        \item $\Rightarrow P(read|John) = 1/1 = 1$
+    \end{itemize}
+    \item \textbf{计算 $P(a | read)$}：
+    \begin{itemize}
+        \item $Count(read) = 3$ (出现在句1, 2, 3中)
+        \item $Count(read, a) = 2$ (出现在句2, 3中，分别是 "read a")
+        \item $\Rightarrow P(a|read) = 2/3$
+    \end{itemize}
+    \item \textbf{计算 $P(book | a)$}：
+    \begin{itemize}
+        \item $Count(a) = 2$
+        \item $Count(a, book) = 1$ (句3: "a book")，注意句2是 "a different"
+        \item $\Rightarrow P(book|a) = 1/2$
+    \end{itemize}
 \end{itemize}
 
-\subsubsection{实例计算 (Bigram)}
-语料库：
-\begin{quote}
-    $\langle BOS \rangle$ John read Moby Dick $\langle EOS \rangle$\\
-    $\langle BOS \rangle$ Mary read a different book $\langle EOS \rangle$\\
-    $\langle BOS \rangle$ She read a book by Cher $\langle EOS \rangle$
-\end{quote}
-计算 $P(read | John)$：
-$$ P(read|John) = \frac{Count(John, read)}{Count(John)} = \frac{1}{1} = 1 $$
-计算 $P(a | read)$：
-$$ P(a|read) = \frac{Count(read, a)}{Count(read)} = \frac{2}{3} $$
-
-% ==========================================================
-% 3. 数据平滑 (重点)
-% ==========================================================
+% =========================================================================
+% 3.3 数据平滑 (Data Smoothing) - 重点
+% =========================================================================
 \subsection{数据平滑 (Data Smoothing)}
 
 \subsubsection{为什么要平滑？}
-\textbf{数据稀疏 (Data Sparsity)} 是统计 NLP 的最大挑战。
+\textbf{数据稀疏 (Data Sparsity)} 是 N-gram 的致命伤。
 \begin{itemize}
-    \item \textbf{零概率问题}：如果测试集中出现了训练集中未见过的 N-gram，MLE 会赋予其 0 概率，导致整个句子概率为 0。
-    \item \textbf{核心思想}：“劫富济贫”。调低高频事件的概率，将其分配给零概率或低频事件。
+    \item \textbf{零概率问题}：如果测试集中出现了训练集中未见过的 N-gram（如 "Cher read"），MLE 会赋予其 0 概率。
+    \item \textbf{后果}：由于连乘效应，只要有一个词的概率为 0，整句话的概率 $P(S)$ 就变成 0。这显然是不合理的。
+    \item \textbf{核心思想}：“\textbf{劫富济贫}”。将高频事件的概率量（富）削减一部分，分配给未见过的事件（贫）。
 \end{itemize}
 
-\subsubsection{常见平滑方法}
-
-\paragraph{1. 加1法 (Add-one / Laplace Smoothing)}
-最简单粗暴的方法，假设每个 N-gram 至少出现一次。
+\subsubsection{1. 加1平滑 (Add-one / Laplace Smoothing)}
+最简单的平滑方法。假设每个 N-gram 在训练集中多出现了一次。
 \begin{equation}
-    P_{Add1}(w_i | w_{i-1}) = \frac{1 + C(w_{i-1} w_i)}{|V| + \sum_{w} C(w_{i-1} w)} = \frac{1 + C(w_{i-1} w_i)}{|V| + C(w_{i-1})}
+    P_{Add1}(w_i | w_{i-1}) = \frac{C(w_{i-1} w_i) + 1}{C(w_{i-1}) + |V|}
 \end{equation}
 \begin{itemize}
-    \item $|V|$ 是词表大小。
-    \item \textbf{缺点}：当 $|V|$ 很大时，分配给未见词的概率过多，导致模型效果很差。
+    \item $|V|$：词表大小 (Vocabulary Size)。
+    \item \textbf{缺点}：通常 $|V|$ 很大（几万到几十万），导致分母剧增，原始的非零概率被严重稀释（削减太多），效果往往不佳。
 \end{itemize}
 
-\paragraph{2. Good-Turing 估计法 (重点)}
-平滑算法的基础。利用“出现 $r$ 次的 n-gram 的个数 $n_r$”来重新估计概率。
+\subsubsection{2. Good-Turing 估计 (重点理解)}
+这是许多平滑算法（如 Katz Back-off）的基础。它利用\textbf{频率的频率}来估计概率。
 \begin{itemize}
-    \item \textbf{原理}：用出现 $r+1$ 次的事件数量来修正出现 $r$ 次的概率。
-    \item \textbf{修正计数}：$r^* = (r+1) \frac{n_{r+1}}{n_r}$
-    \item \textbf{概率公式}：$P_r = \frac{r^*}{N}$ （$N$ 为总样本数）
-    \item 对于未见事件 ($r=0$)，分配概率 $P_0 = \frac{n_1}{N}$。
+    \item \textbf{定义}：Let $N_r$ be the number of n-grams that occur $r$ times. (出现 $r$ 次的 n-gram 有 $N_r$ 个)。
+    \item \textbf{调整计数 $r^*$}：对于出现 $r$ 次的事件，认为其实际发生次数应修正为：
+    \begin{equation}
+        r^* = (r+1) \frac{N_{r+1}}{N_r}
+    \end{equation}
+    \item \textbf{概率估计}：
+    $$ P_r = \frac{r^*}{N} $$
+    \item \textbf{未见事件 ($r=0$) 的概率}：
+    $$ P_0 = \frac{N_1}{N} $$
+    即：所有未见过的 n-gram 的总概率，等于出现一次的 n-gram 在语料中的总比例。
 \end{itemize}
 
-\paragraph{3. Katz 后退法 (Back-off)}
+\subsubsection{3. 线性插值法 (Linear Interpolation)}
+简单且有效。将高阶模型（如 Trigram）与低阶模型（Bigram, Unigram）进行加权组合。
+\begin{equation}
+    \hat{P}(w_n|w_{n-2}w_{n-1}) = \lambda_3 P(w_n|w_{n-2}w_{n-1}) + \lambda_2 P(w_n|w_{n-1}) + \lambda_1 P(w_n)
+\end{equation}
 \begin{itemize}
-    \item \textbf{思想}：如果你有可靠的高阶 n-gram 统计（次数 $>K$），就用高阶的；如果数据不够（次数 $\le K$ 或为 0），就“后退”到低阶模型（如 trigram $\to$ bigram）。
-    \item 需要引入归一化因子 $\alpha$ 以保证概率和为 1。
+    \item 约束：$\sum \lambda_i = 1$。
+    \item 能够充分利用高阶模型的准确性和低阶模型的鲁棒性。若高阶数据稀疏（Count=0），低阶模型能提供非零概率支持。
 \end{itemize}
 
-\paragraph{4. 线性插值法 (Linear Interpolation)}
-简单有效，广泛使用（如 Jelinek-Mercer 平滑）。
+% =========================================================================
+% 3.4 模型评价
+% =========================================================================
+\subsection{模型评价}
+\textbf{困惑度 (Perplexity, PP)} 是衡量语言模型好坏的标准指标。
 \begin{itemize}
-    \item \textbf{思想}：混合高阶和低阶模型，给它们不同的权重 $\lambda$。
-    \item \textbf{公式 (Trigram)}：
-    $$ \hat{P}(w_n|w_{n-2}w_{n-1}) = \lambda_3 P(w_n|w_{n-2}w_{n-1}) + \lambda_2 P(w_n|w_{n-1}) + \lambda_1 P(w_n) $$
-    其中 $\sum \lambda_i = 1$。
-    \item 参数 $\lambda$ 通常通过在\textbf{留存数据 (Held-out data)}上最大化似然度（使用 EM 算法）来获得。
+    \item \textbf{定义}：测试集概率的倒数的几何平均。
+    \begin{equation}
+        PP(S) = P(w_1 \dots w_N)^{-\frac{1}{N}} = \sqrt[N]{\frac{1}{P(w_1 \dots w_N)}}
+    \end{equation}
+    \item \textbf{与熵的关系}：$PP(S) = 2^{H(S)}$，其中 $H(S)$ 是交叉熵。
+    \item \textbf{直观含义}：模型在预测下一个词时，平均有多少个等可能的选择（分支系数）。
+    \item \textbf{标准}：\textbf{PP值越小，模型越好}。
 \end{itemize}
 
-% ==========================================================
-% 后续小节占位符 (PPT主要讲解前三节)
-% ==========================================================
-\subsection{神经网络概述}
-% (课件未详细展开，建议补充：从离散符号到连续向量空间的转变)
-
-\subsection{前馈神经网络语言模型 (FFNN-LM)}
-% (Bengio 2003: 解决了维度灾难，引入了 Word Embedding)
-
-\subsection{循环神经网络语言模型 (RNN-LM)}
-% (Mikolov: 利用 hidden state 传递无限长历史信息)
-
-\subsection{长时短时记忆网络语言模型 (LSTM-LM)}
-% (解决 RNN 梯度消失问题，捕捉长距离依赖)
-
-\subsection{注意力机制语言模型}
-% (Transformer, BERT, GPT: 并行计算，Self-Attention)
+% =========================================================================
+% 3.5 典型应用：音字转换
+% =========================================================================
+\subsection{典型应用：音字转换 (Pinyin-to-Character)}
+拼音输入法本质上是一个解码问题。
+\begin{itemize}
+    \item \textbf{输入}：拼音串 $S$ (如 "ta shi yan jiu sheng wu de")。
+    \item \textbf{输出}：汉字串 $W$。
+    \item \textbf{公式} (基于噪声信道模型)：
+    $$ \hat{W} = \arg\max_W P(W|S) = \arg\max_W \frac{P(S|W) P(W)}{P(S)} \approx \arg\max_W P(W) $$
+    因为给定汉字 $W$，其拼音 $S$ 是固定的（忽略多音字模糊性），即 $P(S|W) \approx 1$。因此，问题转化为寻找\textbf{语言模型概率 $P(W)$ 最大}的汉字序列。
+    \item \textbf{示例分析}：
+    \begin{itemize}
+        \item 候选1：\textbf{踏实}(adj) \textbf{研究}(v) \textbf{生物}(n) \textbf{的}(u)
+        \item 候选2：\textbf{他}(pron) \textbf{是}(v) \textbf{研究}(v) \textbf{生物}(n) \textbf{的}(u)
+    \end{itemize}
+    在 Bigram 模型中，比较关键路径概率：
+    \begin{itemize}
+        \item $P(\text{是}|\text{他})$ 通常远大于 $P(\text{研究}|\text{踏实})$。
+        \item 因此语言模型会正确选择“\textbf{他是研究生物的}”。
+    \end{itemize}
+\end{itemize}
 \newpage
 
-\section{文本表示 \small{(3学时 张家俊)}}
-\subsection{向量空间表示模型}
-\subsection{深度学习表示模型}
-\subsection{词语表示}
-\subsection{句子表示}
-\subsection{文档表示}
+\section{传统NLP关键技术 \small{(6学时 宗成庆)}}
+
+\begin{note}[章节导读]
+本章横跨300页PPT，涵盖了深度学习时代之前的NLP三大基石：词法、句法与语义。
+\textbf{核心考点}：
+\begin{itemize}
+    \item \textbf{算法手推}：CKY算法填充解析表、Shift-Reduce的动作序列推导。
+    \item \textbf{歧义辨析}：交集型 vs 组合型歧义；结构歧义的消解。
+    \item \textbf{模型对比}：生成式(HMM/PCFG) vs 判别式(CRF/Dependency)。
+\end{itemize}
+\end{note}
+
+% =========================================================================
+% 4.1 词语切分与命名实体识别
+% =========================================================================
+\subsection{词语切分与命名实体识别 (Lexical Analysis)}
+
+\subsubsection{1. 分词难点：歧义与未登录词}
+\begin{enumerate}
+    \item \textbf{切分歧义 (Segmentation Ambiguity)}：
+    \begin{itemize}
+        \item \textbf{交集型歧义 (Intersection Ambiguity)}：
+        字符串 $ABC$ 中，$AB$ 成词，$BC$ 也成词。
+        \textit{例：} “结合成分子” $\to$ “结合/成/分子” vs “结合/成分/子”。
+        \textit{定义：} 交集串链的长度是衡量处理难度的指标。
+        \item \textbf{组合型歧义 (Combination Ambiguity)}：
+        字符串 $AB$ 在某些语境下是词，在另一些语境下是两个词。
+        \textit{例：} “这个人手脚不干净”（词：偷窃） vs “冻得手脚冰凉”（短语：手和脚）。
+    \end{itemize}
+    \item \textbf{未登录词 (OOV) 识别}：
+    包括人名（中国人名/外国人名译名）、地名、机构名、新词（如“奥利给”）。OOV 是造成分词错误的主要原因（占 >60\%）。
+\end{enumerate}
+
+\subsubsection{2. 机械切分算法 (Rule-based)}
+\textbf{假设}：词典是完备的。
+\begin{algorithm}[H]
+    \caption{正向/逆向最大匹配算法}
+    \begin{itemize}
+        \item \textbf{FMM (Forward Maximum Matching)}：
+        从左向右扫描，取窗口 $MaxLen$，查词典。若不匹配，去掉最后一个字，继续查。
+        \textit{缺点}：倾向于切分出短词，对于偏正结构（重心在后）处理较差。
+        \item \textbf{BMM (Backward Maximum Matching)}：
+        从右向左扫描。对于汉语，BMM 准确率通常高于 FMM（约 1\% 的差异）。
+        \item \textbf{双向匹配 (Bi-directional Matching)}：
+        同时运行 FMM 和 BMM。
+        \textit{决策规则}：
+        1. 若结果相同，输出任意一个。
+        2. 若结果不同，选择词数量较少的结果（长词优先）。
+        3. 若词数也相同，选择单字词较少的结果。
+    \end{itemize}
+\end{algorithm}
+
+\subsubsection{3. 统计分词方法 (Statistical)}
+将分词建模为\textbf{字位标注 (Sequence Labeling)}问题。
+\begin{itemize}
+    \item \textbf{标签集 (Tagset)}：\{B (Begin), M (Middle), E (End), S (Single)\}。
+    \item \textbf{模型对比}：
+    \begin{itemize}
+        \item \textbf{HMM}：$P(X, Y) = \prod P(y_i|y_{i-1}) P(x_i|y_i)$。生成式，假设独立，难以利用长距离特征。
+        \item \textbf{CRF}：$P(Y|X) = \frac{1}{Z} \exp(\sum \lambda f(y, x))$。判别式，全局归一化，能利用丰富的上下文特征，是传统分词的 SOTA 方法。
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{4. 子词切分 (Subword Segmentation)}
+针对英语等印欧语系，解决 OOV 和词表过大问题。
+\begin{itemize}
+    \item \textbf{BPE (Byte Pair Encoding)}：
+    迭代合并语料中频率最高的字符对 (Character Pair)，直到达到预设的词表大小。
+    \textit{作用}：自动学习词根、词缀（如 "un-", "-ing"），实现“开放词汇”覆盖。
+\end{itemize}
+
+\subsubsection{5. 词性标注与命名实体识别}
+\begin{itemize}
+    \item \textbf{标注集示例}：
+    \begin{itemize}
+        \item \textbf{北大标准 (PKU)}：/n (名词), /v (动词), /vn (名动词), /w (标点)。
+        \item \textbf{宾州树库 (Penn Treebank)}：NN, VB, JJ, DT 等。
+    \end{itemize}
+    \item \textbf{实体类型 (NER)}：PER (人名), LOC (地名), ORG (机构名)。
+    \textit{例句：}
+    \begin{quote}
+        克拉伦斯/nrg ·/w 威姆斯/nrf (Clarence Weems) 和/c 张/nrf 宁/nrg 相继/d 上篮/v 得手/v
+    \end{quote}
+\end{itemize}
+
+% =========================================================================
+% 4.2 句法分析 (Syntactic Parsing) - 重点章节
+% =========================================================================
+\subsection{句法分析 (Syntactic Parsing)}
+
+\subsubsection{1. 短语结构分析 (Phrase Structure Parsing)}
+\begin{itemize}
+    \item \textbf{文法形式}：\textbf{PCFG (概率上下文无关文法)}。
+    规则形式：$A \to \beta [p]$，其中 $\sum_{\beta} P(A \to \beta) = 1$。
+    \item \textbf{核心算法：CKY 算法 (Cocke-Younger-Kasami)}
+    \begin{itemize}
+        \item \textbf{前提}：文法必须转换为 \textbf{CNF (乔姆斯基范式)}，即 $A \to BC$ 或 $A \to w$。
+        \item \textbf{原理}：动态规划。构建 $(n+1) \times (n+1)$ 的三角矩阵。
+        \item \textbf{递推公式}：
+        对于跨度 $[i, j]$ 和分裂点 $k$ ($i < k < j$)：
+        $$ P(A_{i,j}) = \max_{k, B, C} P(B_{i,k}) \cdot P(C_{k,j}) \cdot P(A \to BC) $$
+        \item \textbf{复杂度}：$O(n^3 \cdot |G|^3)$。
+    \end{itemize}
+    \item \textbf{PCFG 的三个基本问题} (类比 HMM)：
+    1. 计算句子概率 (Inside Algorithm)；2. 寻找最优句法树 (Viterbi Algorithm)；3. 参数估计 (Inside-Outside Algorithm)。
+\end{itemize}
+
+\subsubsection{2. 依存句法分析 (Dependency Parsing)}
+\textbf{核心}：词与词之间的二元非对称关系（Head $\to$ Modifier）。
+\begin{itemize}
+    \item \textbf{约束条件}：
+    1. 单一中心词 (Single Head)；2. 连通性 (Connected)；3. 无环 (Acyclic)；4. \textbf{投射性 (Projectivity)}（如果不满足则为非投射，常见于德语等，需特殊处理）。
+    \item \textbf{主流算法}：
+    \begin{enumerate}
+        \item \textbf{基于图 (Graph-based)}：
+        \textbf{MST 算法} (Maximum Spanning Tree)。
+        寻找有向图中的最大生成树。特点：全局最优，能处理非投射，但复杂度较高 ($O(n^3)$ 或 $O(n^2)$)。
+        \item \textbf{基于转移 (Transition-based)}：
+        \textbf{Shift-Reduce 算法} (如 Arc-Eager, Arc-Standard)。
+        \begin{itemize}
+            \item \textbf{数据结构}：栈 (Stack $\sigma$), 缓冲队列 (Buffer $\beta$), 依存弧集合 ($A$)。
+            \item \textbf{动作 (Actions)}：
+            \begin{itemize}
+                \item \textbf{Shift}：将 $\beta$ 队首词压入 $\sigma$。
+                \item \textbf{Left-Arc}：$\sigma$ 栈顶词作为子节点，$\beta$ 队首词作为父节点。
+                \item \textbf{Right-Arc}：$\sigma$ 栈顶词作为父节点，$\beta$ 队首词作为子节点。
+                \item \textbf{Reduce}：弹出 $\sigma$ 栈顶。
+            \end{itemize}
+            \item \textbf{特点}：$O(n)$ 线性复杂度，速度快，但贪心搜索容易累积误差 (Error Propagation)。
+        \end{itemize}
+    \end{enumerate}
+\end{itemize}
+
+\subsubsection{3. 附录：汉英句法结构对比 (重点)}
+\begin{itemize}
+    \item \textbf{英语 (Hypotaxis - 形合)}：
+    “结构型”语言。句子结构严谨，主谓宾完备。长句通过显式的连接词 (Relation words) 构造复杂的树状结构。
+    \item \textbf{汉语 (Parataxis - 意合)}：
+    “语义型”语言。重意不重形，常省略主语或连接词。
+    \textbf{特有现象}：\textbf{流水句 (Run-on sentences) / 句群}。
+    \textit{难点}：句法分析器很难判断逗号是分割两个分句（并列），还是分割从句（嵌套）。
+\end{itemize}
+
+% =========================================================================
+% 4.3 语义分析 (Semantic Analysis)
+% =========================================================================
+\subsection{语义分析 (Semantic Analysis)}
+
+\subsubsection{1. 语义歧义 (Semantic Ambiguity)}
+\begin{itemize}
+    \item \textbf{一词多义}：Polysemy。
+    \item \textbf{结构导致语义歧义}：“咬死了猎人的狗” (Subject/Object Ambiguity)。
+    \item \textbf{反义同解现象}：
+    \begin{itemize}
+        \item “中国队\textbf{大胜}美国队” vs “中国队\textbf{大败}美国队” $\to$ 都是中国队赢。
+        \item “小心\textbf{火烛}” vs “小心\textbf{地滑}” $\to$ 语义指向不同。
+        \item “\textbf{冬天}能穿多少穿多少” (多) vs “\textbf{夏天}能穿多少穿多少” (少)。
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{2. 语义网络 (Semantic Network)}
+\begin{itemize}
+    \item \textbf{WordNet}：
+    基于心理语言学的词汇库。节点是 \textbf{Synset (同义词集)}。
+    \item \textbf{语义关系}：
+    \begin{itemize}
+        \item \textbf{Hypernym (上位词)} / \textbf{Hyponym (下位词)}：is-a 关系 (Bird $\leftrightarrow$ Robin)。
+        \item \textbf{Holonym (整体)} / \textbf{Meronym (部分)}：part-of 关系 (Car $\leftrightarrow$ Wheel)。
+        \item \textbf{Antonym (反义词)}。
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{3. 语义角色标注 (SRL)}
+\textbf{任务}：浅层语义分析，识别谓词 (Predicate) 的论元 (Arguments)。
+\begin{itemize}
+    \item \textbf{两大体系}：
+    \begin{itemize}
+        \item \textbf{FrameNet}：基于框架语义学。标签如 \textit{Buyer, Goods, Money}。
+        \item \textbf{PropBank} (命题库)：基于 Penn Treebank。标签为 $Arg0$ (施事), $Arg1$ (受事), $ArgM-TMP$ (时间), $ArgM-LOC$ (地点)。
+    \end{itemize}
+    \item \textbf{示例分析}：
+    \begin{quote}
+        \textbf{警察}($Arg0$/Agent) 已 \textbf{到}($Pred$) \textbf{现场}($Arg1$/Loc)，正在 \textbf{详细}($ArgM-MNR$) \textbf{调查}($Pred$) \textbf{事故原因}($Arg1$/Patient)。
+    \end{quote}
+\end{itemize}
 \newpage
 
-\section{词法分析与句法分析 \small{(6学时 宗成庆)}}
-\subsection{汉语自动分词方法}
-\subsection{分词结果评价}
-\subsection{未登录识别}
-\subsection{词性标注}
-\subsection{子词切分}
-\subsection{短语结构分析方法}
-\subsection{依存关系分析方法}
-\subsection{句法分析结果评价}
+\section{神经网络与语言模型 \small{(6学时 张家俊)}}
+
+\begin{note}[本章复习总纲]
+本章内容横跨 113 页 PPT，是 NLP 从统计时代迈向深度学习时代的里程碑。
+\textbf{核心逻辑链}：
+\begin{enumerate}
+    \item \textbf{起点}：N-gram 的稀疏性与维数灾难 $\to$ \textbf{FFNN} (引入词向量，连续空间建模)。
+    \item \textbf{进阶}：FFNN 的固定窗口限制 $\to$ \textbf{RNN} (引入隐状态，处理变长序列)。
+    \item \textbf{修正}：RNN 的梯度消失问题 $\to$ \textbf{LSTM} (引入门控机制，记忆长距离信息)。
+    \item \textbf{终局}：RNN 的串行计算瓶颈 $\to$ \textbf{Self-Attention} (并行计算，全局视野)。
+\end{enumerate}
+\end{note}
+
+% =========================================================================
+% 5.1 神经网络基础 (Neural Networks Overview)
+% =========================================================================
+\subsection{1. 神经网络基础 (Neural Networks Overview)}
+
+\subsubsection{1.1 神经元模型 (M-P Model)}
+1943年，McCulloch 和 Pitts 提出形式化数学描述：
+\begin{equation}
+    y = f(\mathbf{W}^T \mathbf{X} + b) = f\left( \sum_{i=1}^n w_i x_i + b \right)
+\end{equation}
+其中 $f(\cdot)$ 为激活函数，提供非线性能力。
+
+\subsubsection{1.2 核心激活函数}
+\begin{itemize}
+    \item \textbf{Sigmoid}: $\sigma(z) = \frac{1}{1+e^{-z}}$。输出 $(0,1)$，易导致\textbf{梯度消失}。
+    \item \textbf{Tanh}: $\tanh(z) = \frac{e^z - e^{-z}}{e^z + e^{-z}}$。输出 $(-1,1)$，零中心化，但仍有梯度消失问题。
+    \item \textbf{ReLU}: $\max(0, z)$。解决梯度消失，计算快，是现代深度学习的首选。
+\end{itemize}
+
+% =========================================================================
+% 5.2 前馈神经网络语言模型 (FFNN-LM)
+% =========================================================================
+\subsection{2. 前馈神经网络语言模型 (FFNN-LM)}
+
+\subsubsection{2.1 动机：解决 N-gram 的两大痛点}
+\begin{enumerate}
+    \item \textbf{数据稀疏 (Data Sparsity)}：N-gram 无法处理未见过的词组（概率为0）。
+    \item \textbf{缺乏泛化 (Lack of Generalization)}：离散的 One-hot 表示使得 $Sim(cat, dog) = 0$。FFNN 通过\textbf{词向量 (Distributed Representation)} 将词映射到连续空间，相似词距离近，从而实现“由 cat 泛化到 dog”。
+\end{enumerate}
+
+\subsubsection{2.2 模型架构 (Bengio et al., 2003)}
+输入前 $n-1$ 个词，预测第 $n$ 个词。
+\begin{itemize}
+    \item \textbf{输入层}：查表得到词向量 $C(w_t)$。
+    \item \textbf{投影层}：拼接上下文向量 $\mathbf{x} = [C(w_{t-n+1}); \dots; C(w_{t-1})]$。
+    \item \textbf{隐藏层}：$\mathbf{h} = \tanh(\mathbf{H}\mathbf{x} + \mathbf{d})$。
+    \item \textbf{输出层}：$\mathbf{y} = \mathbf{U}\mathbf{h} + \mathbf{W}\mathbf{x} + \mathbf{b}$ （含直连边 $\mathbf{W}\mathbf{x}$）。
+    \item \textbf{概率计算}：$P(w_t|context) = \text{Softmax}(\mathbf{y})_t$。
+\end{itemize}
+
+\subsubsection{2.3 反向传播推导 (Back-Propagation Details)}
+\textit{(PPT 25-30页详细推导了梯度计算，这是考点)}
+定义损失函数 $E = \frac{1}{2}\sum (t_i - y_i)^2$ (或交叉熵)，利用链式法则：
+\begin{itemize}
+    \item \textbf{输出层梯度}：$\delta_i = \frac{\partial E}{\partial y_i} \cdot f'(s_i) = -(t_i - y_i) y_i (1-y_i)$ (假设 Sigmoid)。
+    \item \textbf{隐藏层权重更新}：$\Delta w_{i \leftarrow j} = \eta \delta_i h_j$。
+    \item \textbf{误差反传至隐藏层}：$\frac{\partial E}{\partial h_j} = \sum_i \delta_i w_{i \leftarrow j}$。
+\end{itemize}
+
+% =========================================================================
+% 5.3 循环神经网络语言模型 (RNN-LM)
+% =========================================================================
+\subsection{3. 循环神经网络语言模型 (RNN-LM)}
+
+\subsubsection{3.1 核心公式}
+RNN 引入\textbf{隐状态 $h_t$} (Hidden State) 作为记忆单元，处理变长序列。
+\begin{align}
+    h_t &= \tanh(\mathbf{U} x_t + \mathbf{W} h_{t-1}) \\
+    y_t &= \text{Softmax}(\mathbf{V} h_t)
+\end{align}
+\textbf{特点}：权重矩阵 $\mathbf{U}, \mathbf{W}, \mathbf{V}$ 在所有时间步\textbf{共享}。
+
+\subsubsection{3.2 BPTT 与 梯度问题}
+训练算法为\textbf{随时间反向传播 (BPTT)}。
+\begin{itemize}
+    \item \textbf{梯度消失 (Gradient Vanishing)}：$\frac{\partial h_t}{\partial h_k} = \prod \mathbf{W}$。若 $\mathbf{W}$ 特征值 $<1$，连乘导致梯度趋零，模型无法捕捉长距离依赖。
+    \item \textbf{梯度爆炸 (Gradient Exploding)}：若特征值 $>1$，梯度指数级增长。解法：\textbf{梯度裁剪 (Gradient Clipping)}。
+\end{itemize}
+
+% =========================================================================
+% 5.4 长短时记忆网络 (LSTM)
+% =========================================================================
+\subsection{4. 长短时记忆网络 (LSTM)}
+
+\subsubsection{4.1 核心机制：三门一胞}
+LSTM 通过引入\textbf{门控机制}和独立的\textbf{细胞状态 $C_t$} (Cell State) 解决梯度消失。
+\textit{(PPT 75-82页详细公式)}：
+
+\begin{enumerate}
+    \item \textbf{遗忘门 (Forget Gate)}：决定丢弃多少旧记忆。
+    $$ f_t = \sigma(W_f [h_{t-1}, x_t] + b_f) $$
+    \item \textbf{输入门 (Input Gate)}：决定写入多少新信息。
+    $$ i_t = \sigma(W_i [h_{t-1}, x_t] + b_i) $$
+    \item \textbf{候选记忆 (Candidate Cell)}：生成新的待存信息。
+    $$ \tilde{C}_t = \tanh(W_C [h_{t-1}, x_t] + b_C) $$
+    \item \textbf{细胞状态更新 (核心)}：\textbf{加法更新}形成“梯度高速公路”。
+    $$ C_t = f_t \odot C_{t-1} + i_t \odot \tilde{C}_t $$
+    \item \textbf{输出门 (Output Gate)}：控制隐状态输出。
+    $$ o_t = \sigma(W_o [h_{t-1}, x_t] + b_o) $$
+    \item \textbf{隐状态计算}：
+    $$ h_t = o_t \odot \tanh(C_t) $$
+\end{enumerate}
+
+% =========================================================================
+% 5.5 自注意力机制 (Self-Attention)
+% =========================================================================
+\subsection{5. 自注意力机制 (Self-Attention)}
+
+\subsubsection{5.1 动机}
+RNN 只能串行计算（$t$ 依赖 $t-1$），且长距离依赖仍有损耗。Attention 实现\textbf{并行计算}且路径长度为 $O(1)$。
+
+\subsubsection{5.2 计算步骤 (Scaled Dot-Product Attention)}
+\textit{(PPT 90-102页详细推导)}
+给定输入序列 $\mathbf{X}$：
+\begin{enumerate}
+    \item \textbf{线性映射}：生成 Query ($\mathbf{Q}$), Key ($\mathbf{K}$), Value ($\mathbf{V}$)。
+    $$ \mathbf{Q} = \mathbf{X}\mathbf{W}^Q, \quad \mathbf{K} = \mathbf{X}\mathbf{W}^K, \quad \mathbf{V} = \mathbf{X}\mathbf{W}^V $$
+    \item \textbf{计算相关性 (Attention Scores)}：
+    $$ e_{jk} = \mathbf{q}_j \cdot \mathbf{k}_k^T $$
+    \item \textbf{缩放与归一化}：除以 $\sqrt{d_k}$ 防止梯度消失，再经 Softmax。
+    $$ \alpha_{jk} = \frac{\exp(e_{jk} / \sqrt{d_k})}{\sum_{k'} \exp(e_{jk'} / \sqrt{d_k})} $$
+    \item \textbf{加权求和}：
+    $$ \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \sum_k \alpha_{jk} \mathbf{v}_k = \text{softmax}\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}}\right)\mathbf{V} $$
+\end{enumerate}
+
+\subsubsection{5.3 多头注意力 (Multi-Head Attention)}
+将 $\mathbf{Q}, \mathbf{K}, \mathbf{V}$ 投影到 $h$ 个不同的子空间并行计算，最后拼接 (Concat) 输出。让模型能同时关注不同的特征（如局部语法vs全局语义）。
+$$ \text{MultiHead}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{Concat}(head_1, \dots, head_h)\mathbf{W}^O $$
+
+\subsubsection{5.4 GPT (Generative Pre-trained Transformer)}
+基于 Transformer \textbf{Decoder} 的单向语言模型。通过在大规模语料上进行无监督预训练 (Pre-training)，学习通用的语言表示，再在下游任务微调 (Fine-tuning)。
+
+\section{文本表示 (Text Representation) \small{(3学时 张家俊)}}
+
+\begin{note}[本章复习总纲]
+文本表示是 NLP 的基石。复习时请重点把握从“离散”到“分布式”的演变逻辑：
+\begin{enumerate}
+    \item \textbf{离散表示 (Discrete)}：One-hot, BoW, TF-IDF。核心缺陷是维度爆炸和语义鸿沟。
+    \item \textbf{分布式表示 (Distributed)}：核心是\textbf{词向量 (Word Embedding)}。
+    \begin{itemize}
+        \item \textbf{基于语言模型}：NNLM (Bengio) 的副产品。
+        \item \textbf{直接学习法}：C\&W, Word2Vec (CBOW/Skip-gram), GloVe。
+    \end{itemize}
+    \item \textbf{句子/文档表示}：从简单的词向量平均到 CNN/RNN/Attention 建模。
+\end{enumerate}
+\end{note}
+
+% =========================================================================
+% 6.1 向量空间模型
+% =========================================================================
+\subsection{1. 向量空间模型 (Vector Space Model, VSM)}
+
+\subsubsection{1.1 基本概念}
+由 Salton 等人于 60 年代提出，核心是将文本视为特征项 (Term) 的集合。
+\begin{itemize}
+    \item \textbf{表示}：文本 $d$ 表示为权重向量 $\mathbf{d} = (w_1, w_2, \dots, w_N)$。
+    \item \textbf{特征项}：通常是词 (Word) 或短语。
+    \item \textbf{权重计算}：
+    \begin{itemize}
+        \item \textbf{TF (Term Frequency)}：词频。$w_i = TF_i$。
+        \item \textbf{IDF (Inverse Document Frequency)}：逆文档频率。$IDF_i = \log \frac{N}{df_i}$ （$N$为总文档数，$df_i$为包含特征项 $t_i$ 的文档数）。
+        \item \textbf{TF-IDF}：$w_i = TF_i \times IDF_i$。降低常见词（如 "the"）的权重，提升独特词的权重。
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{1.2 长度规范化}
+长文档可能包含更高的词频，导致权重偏差。
+\begin{equation}
+    \mathbf{d}_{norm} = \frac{\mathbf{d}}{||\mathbf{d}||_2} = \frac{(w_1, \dots, w_N)}{\sqrt{\sum w_i^2}}
+\end{equation}
+
+\subsubsection{1.3 离散符号表示的缺陷}
+\begin{itemize}
+    \item \textbf{One-hot 表示}：维度等于词表大小 $|V|$，极其稀疏。
+    \item \textbf{语义鸿沟}：任意两个不同词的 One-hot 向量正交 ($\mathbf{w}_i \cdot \mathbf{w}_j = 0$)，无法计算相似度。
+\end{itemize}
+
+% =========================================================================
+% 6.2 词语的表示学习 (Word Representation Learning)
+% =========================================================================
+\subsection{2. 词语的表示学习 (Word Embedding)}
+
+\subsubsection{2.1 分布式假设 (Distributional Hypothesis)}
+\begin{quote}
+    \textit{"You shall know a word by the company it keeps."} (J.R. Firth, 1957)
+\end{quote}
+词的语义由其上下文决定。
+
+\subsubsection{2.2 基于语言模型的方法}
+\textbf{NNLM (Bengio et al., 2003)}：
+\begin{itemize}
+    \item 目标是最大化语言模型似然度 $L = \sum_t \log P(w_t | w_{t-n+1}^{t-1})$。
+    \item 词向量矩阵 $\mathbf{L} \in \mathbb{R}^{|V| \times D}$ 是模型的参数，随训练过程自动学习优化。
+    \item \textbf{地位}：词向量是语言模型任务的“副产品”。
+\end{itemize}
+
+\subsubsection{2.3 C\&W 模型 (Collobert \& Weston, 2008)}
+\textbf{核心思想}：将目标从预测下一个词改为\textbf{区分正例和负例}（Ranking Loss）。
+\begin{itemize}
+    \item \textbf{输入}：
+    \begin{itemize}
+        \item 正例 $s$：合法句子 (Context + Target Word)。
+        \item 负例 $s'$：将 Target Word 随机替换为词表中的其他词。
+    \end{itemize}
+    \item \textbf{目标函数}：Hinge Loss (Max-margin)。
+    \begin{equation}
+        Loss = \max(0, 1 + Score(s') - Score(s))
+    \end{equation}
+    要求正例的打分比负例高至少 1。
+\end{itemize}
+
+\subsubsection{2.4 Word2Vec (Mikolov et al., 2013) [核心考点]}
+% 
+Word2Vec 去掉了非线性的隐藏层，直接训练词向量，极大提高了训练速度。
+
+\paragraph{(1) CBOW (Continuous Bag-of-Words)}
+\begin{itemize}
+    \item \textbf{任务}：根据上下文预测中心词。
+    \item \textbf{输入}：上下文 $2C$ 个词向量的\textbf{平均值} (或求和)。
+    $$ \mathbf{h} = \frac{1}{2C} \sum_{j \ne 0} \mathbf{v}_{w_{t+j}} $$
+    \item \textbf{目标}：最大化 $P(w_t | context)$。
+\end{itemize}
+
+\paragraph{(2) Skip-gram}
+\begin{itemize}
+    \item \textbf{任务}：根据中心词预测上下文词。
+    \item \textbf{输入}：中心词向量 $\mathbf{v}_{w_t}$。
+    \item \textbf{目标}：最大化 $\sum_{j \ne 0} \log P(w_{t+j} | w_t)$。
+\end{itemize}
+
+\paragraph{(3) 训练加速技巧}
+\begin{itemize}
+    \item \textbf{层次化 Softmax (Hierarchical Softmax)}：利用 Huffman 树将 $O(|V|)$ 降为 $O(\log |V|)$。
+    \item \textbf{负采样 (Negative Sampling)}：只更新正样本和少量随机采样的负样本。
+    $$ \log \sigma(\mathbf{v}_w^T \mathbf{v}_c) + \sum_{k=1}^K \log \sigma(-\mathbf{v}_{neg_k}^T \mathbf{v}_c) $$
+\end{itemize}
+
+\subsubsection{2.5 GloVe (Global Vectors)}
+\textbf{动机}：结合\textbf{全局矩阵分解} (LSA) 和\textbf{局部上下文窗口} (Word2Vec) 的优点。
+\begin{itemize}
+    \item \textbf{输入}：词共现矩阵 $\mathbf{X}$，其中 $X_{ij}$ 表示词 $i$ 和词 $j$ 共现的次数。
+    \item \textbf{目标函数}：加权最小二乘误差。
+    \begin{equation}
+        J = \sum_{i,j} f(X_{ij}) (\mathbf{w}_i^T \tilde{\mathbf{w}}_j + b_i + \tilde{b}_j - \log X_{ij})^2
+    \end{equation}
+    \item \textbf{直觉}：词向量的点积 $\mathbf{w}_i^T \mathbf{w}_j$ 应逼近共现概率的对数。
+\end{itemize}
+
+% =========================================================================
+% 6.3 短语与句子表示学习
+% =========================================================================
+\subsection{3. 短语与句子表示学习}
+
+\subsubsection{3.1 基础组合方法}
+\begin{itemize}
+    \item \textbf{向量加和/平均}：$\mathbf{v}_{sent} = \frac{1}{N} \sum \mathbf{v}_{word}$。最简单，丢失语序信息。
+    \item \textbf{加权平均}：利用 TF-IDF 作为权重。
+\end{itemize}
+
+\subsubsection{3.2 基于神经网络的方法}
+\begin{itemize}
+    \item \textbf{RNN/LSTM}：取最后一个时间步的隐状态 $\mathbf{h}_T$ 作为句子表示。
+    \item \textbf{CNN (卷积神经网络)}：
+    % 
+    \begin{itemize}
+        \item 利用卷积核 (Filter) 捕捉不同长度的 N-gram 特征 (如 2-gram, 3-gram)。
+        \item 经过 \textbf{Max Pooling} 提取最显著特征，拼接成句子向量。
+    \end{itemize}
+    \item \textbf{Recursive NN (递归神经网络)}：在句法树结构上递归组合向量 (Socher et al.)。
+\end{itemize}
+
+% =========================================================================
+% 6.4 文档表示学习
+% =========================================================================
+\subsection{4. 文档表示学习}
+
+\subsubsection{4.1 层次化注意力模型 (HAN)}
+文档结构具有层次性：词 $\to$ 句子 $\to$ 文档。
+\begin{itemize}
+    \item \textbf{Word Encoder}：双向 GRU 编码词序列。
+    \item \textbf{Word Attention}：区分词的重要性，加权生成句子向量。
+    \item \textbf{Sentence Encoder}：双向 GRU 编码句子序列。
+    \item \textbf{Sentence Attention}：区分句子的重要性，加权生成文档向量。
+\end{itemize}
+
+\subsubsection{4.2 Doc2Vec (Paragraph Vector)}
+扩展了 Word2Vec。
+\begin{itemize}
+    \item \textbf{PV-DM (Distributed Memory)}：类似于 CBOW。预测词时，输入包含上下文词向量 \textbf{和} 段落 ID 向量。
+    \item \textbf{PV-DBOW}：类似于 Skip-gram。根据段落 ID 预测该段落中的随机词。
+\end{itemize}
 \newpage
 
-\section{篇章分析与语义分析 \small{(3学时 宗成庆)}}
-\subsection{篇章表示理论}
-\subsection{篇章关系分析}
-\subsection{篇章关系应用}
-\subsection{语义网络}
-\subsection{语义角色标注}
+\section{大语言模型及其训练 \small{(6学时 张家俊)}}
+
+\begin{note}[本章知识图谱]
+本章内容极多，涵盖了LLM全生命周期的核心技术，请按以下逻辑主线复习：
+\begin{enumerate}
+    \item \textbf{模型架构 (Model)}：从 ELMo $\to$ GPT $\to$ BERT $\to$ LLM (Decoder-only) 的演进。
+    \item \textbf{数据工程 (Data)}：CommonCrawl $\to$ 清洗/去重/配比 (DoReMi)。
+    \item \textbf{训练系统 (System)}：3D并行 (数据/张量/流水线) + 显存优化 (ZeRO, FlashAttention)。
+    \item \textbf{微调对齐 (Alignment)}：SFT $\to$ RLHF (PPO) $\to$ DPO (直接偏好优化)。
+    \item \textbf{提示学习 (Prompt)}：In-context Learning $\to$ Chain-of-Thought (CoT)。
+\end{enumerate}
+\end{note}
+
+% =========================================================================
+% 7. 预训练语言模型 (Pre-trained Language Models)
+% =========================================================================
+\subsection{1. 预训练语言模型演进}
+
+\subsubsection{1.1 ELMo (Embeddings from Language Models)}
+\textbf{核心贡献}：提出了\textbf{上下文相关 (Contextualized)} 的词向量，解决了 Word2Vec 多义词无法区分的问题。
+\begin{itemize}
+    \item \textbf{架构}：双向 LSTM (Bi-LSTM)。
+    \item \textbf{目标函数}：最大化双向似然概率。
+    $$ \sum_{k=1}^N (\log P(t_k | t_1, \dots, t_{k-1}) + \log P(t_k | t_{k+1}, \dots, t_N)) $$
+    \item \textbf{表示}：将各层 LSTM 的输出进行线性加权组合。
+\end{itemize}
+
+\subsubsection{1.2 GPT (Generative Pre-Training)}
+\textbf{核心贡献}：确立了 \textbf{Decoder-only} 架构和 \textbf{Pre-train + Fine-tune} 范式。
+\begin{itemize}
+    \item \textbf{架构}：基于 Transformer Decoder 的单向语言模型 (Masked Self-Attention)。
+    \item \textbf{目标}：预测下一个词 (Next Token Prediction)。
+    $$ L_1(U) = \sum_i \log P(u_i | u_{i-k}, \dots, u_{i-1}; \Theta) $$
+    \item \textbf{演进}：GPT-1 (微调) $\to$ GPT-2 (Zero-shot, "Task description") $\to$ GPT-3 (Few-shot, In-context Learning)。
+\end{itemize}
+
+\subsubsection{1.3 BERT (Bidirectional Encoder Representations from Transformers)}
+\textbf{核心贡献}：引入双向上下文和 \textbf{Masked LM (MLM)} 任务。
+\begin{itemize}
+    \item \textbf{架构}：Transformer Encoder。
+    \item \textbf{预训练任务}：
+    \begin{enumerate}
+        \item \textbf{MLM}：随机 Mask 15\% 的词，利用上下文预测被 Mask 的词。
+        \item \textbf{NSP (Next Sentence Prediction)}：判断句子 B 是否是句子 A 的下文。
+    \end{enumerate}
+    \item \textbf{缺陷}：预训练时的 [MASK] 标记在微调时不存在，导致\textbf{预训练-微调不一致 (Pre-train/Fine-tune Discrepancy)}；无法像 GPT 那样生成长文本。
+\end{itemize}
+
+% =========================================================================
+% 8.1 训练数据 (Training Data)
+% =========================================================================
+\subsection{2. 训练数据工程}
+
+\subsubsection{2.1 数据来源 (Sources)}
+高质量数据是 LLM 能力的基石 ("Garbage In, Garbage Out")。
+\begin{itemize}
+    \item \textbf{网页数据 (Common Crawl)}：体量最大 (PB级)，但噪声极多。需经过严格清洗。
+    \item \textbf{高质量文本}：Wikipedia, BooksCorpus (书籍), arXiv (论文)。
+    \item \textbf{代码数据}：GitHub (提升模型的逻辑推理能力)。
+    \item \textbf{对话数据}：Reddit, Social Media (提升对话能力)。
+\end{itemize}
+
+\subsubsection{2.2 数据处理流水线 (Pipeline)}
+\begin{enumerate}
+    \item \textbf{质量过滤 (Quality Filtering)}：
+    \begin{itemize}
+        \item \textbf{启发式规则}：过滤过短/过长句子，过滤特殊符号过多的文本，过滤困惑度 (Perplexity) 过高的文本。
+        \item \textbf{基于分类器}：训练一个二分类器（如 fastText），区分“高质量”与“低质量”网页。
+    \end{itemize}
+    \item \textbf{去重 (De-duplication)}：
+    \begin{itemize}
+        \item \textbf{精确去重}：MD5/SHA-1 哈希比对。
+        \item \textbf{模糊去重 (Fuzzy Dedup)}：使用 \textbf{MinHash + LSH (Locality Sensitive Hashing)} 算法，检测相似度高的文档（如 Jaccard 相似度 > 0.8）。\textit{作用：防止模型背诵训练集，提升泛化能力。}
+    \end{itemize}
+    \item \textbf{隐私去除 (Privacy Redaction)}：使用正则或 NER 模型去除 PII (Personal Identifiable Information)。
+\end{enumerate}
+
+\subsubsection{2.3 数据配比 (Data Mixture)}
+不同来源的数据占比对模型性能影响巨大。
+\begin{itemize}
+    \item \textbf{DoReMi 算法 (Xie et al., 2023)}：
+    利用一个小规模代理模型 (Proxy Model) 在目标域上通过\textbf{群组分布鲁棒优化 (Group DRO)} 自动搜索各数据域的最佳权重，然后再用该权重训练大模型。
+    \textit{结论：异质数据来源比数据规模更重要。}
+\end{itemize}
+
+% =========================================================================
+% 8.2 训练方法与系统优化 (Training Methods)
+% =========================================================================
+\subsection{3. 高效并行训练方法}
+
+\subsubsection{3.1 显存占用分析}
+训练一个参数量为 $\Phi$ 的模型，显存占用远大于 $2\Phi$ (FP16)。
+\textbf{显存占用公式}：
+$$ \text{Total Memory} \approx \textbf{模型参数} + \textbf{梯度} + \textbf{优化器状态} + \textbf{激活值} $$
+对于 Adam 优化器混合精度训练：
+\begin{itemize}
+    \item \textbf{模型参数} (FP16): $2\Phi$
+    \item \textbf{梯度} (FP16): $2\Phi$
+    \item \textbf{优化器状态} (FP32): 参数备份 ($4\Phi$) + Momentum ($4\Phi$) + Variance ($4\Phi$) = $12\Phi$
+    \item \textbf{总计静态显存}：$2+2+12 = 16\Phi$ 字节。
+    \textit{例：175B 的 GPT-3 仅静态显存就需要 $175 \times 10^9 \times 16 \text{B} \approx 2.8 \text{TB}$，单卡无法放下。}
+\end{itemize}
+
+\subsubsection{3.2 3D 并行策略 (3D Parallelism)}
+\begin{enumerate}
+    \item \textbf{数据并行 (Data Parallelism, DP)}：
+    多卡复制模型，切分数据。每卡计算梯度，通过 \textbf{All-Reduce} 同步梯度。
+    \item \textbf{张量并行 (Tensor Parallelism, TP)} (Megatron-LM)：
+    \textbf{层内切分}。将矩阵乘法 $Y = XA$ 切分到多卡。
+    \begin{itemize}
+        \item \textbf{列切分 (Column Parallel)}：将 $A$ 按列切分，各卡计算部分 $Y$，最后 Concat。
+        \item \textbf{行切分 (Row Parallel)}：将 $A$ 按行切分，输入 $X$ 按列切分，各卡计算后 All-Reduce 求和。
+    \end{itemize}
+    \item \textbf{流水线并行 (Pipeline Parallelism, PP)} (GPipe/PipeDream)：
+    \textbf{层间切分}。将模型的不同层放置在不同 GPU 上。
+    \begin{itemize}
+        \item \textbf{气泡问题 (Bubble)}：GPU 等待前序数据导致空闲。
+        \item \textbf{1F1B 策略}：交替执行 1 个 Forward 和 1 个 Backward，减少空闲时间。
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{3.3 显存优化技术}
+\begin{itemize}
+    \item \textbf{ZeRO (Zero Redundancy Optimizer)} (DeepSpeed)：
+    核心思想是\textbf{切分数据并行的冗余状态}。
+    \begin{itemize}
+        \item \textbf{ZeRO-1}：切分优化器状态 ($P_{os}$)。显存降为 $4\Phi$。
+        \item \textbf{ZeRO-2}：切分梯度 ($P_{os} + P_g$)。显存降为 $2\Phi$。
+        \item \textbf{ZeRO-3}：切分模型参数 ($P_{os} + P_g + P_p$)。显存线性减少，通信量增加 50\%。
+        \item \textbf{ZeRO-Offload}：将优化器状态卸载到 CPU 内存。
+    \end{itemize}
+    \item \textbf{FlashAttention} (Dao et al., 2022)：
+    \textbf{IO 感知优化}。通过分块计算 (Tiling) 和重计算 (Recomputation)，将 Attention 的 $O(N^2)$ 显存复杂度降为 $O(N)$，并大幅减少 HBM (高带宽显存) 到 SRAM 的读写次数，训练速度提升 2-4 倍。
+\end{itemize}
+
+% =========================================================================
+% 9. 微调与对齐 (Fine-tuning & Alignment)
+% =========================================================================
+\subsection{4. 微调与对齐}
+
+\subsubsection{4.1 指令微调 (Instruction Tuning)}
+\textbf{目的}：让模型学会遵循人类指令 (Follow Instructions)，而不仅仅是续写文本。
+\begin{itemize}
+    \item \textbf{方法}：构建 (Instruction, Input, Output) 三元组数据进行有监督微调 (SFT)。
+    \item \textbf{数据集}：FLAN, P3, Self-Instruct (用模型生成指令数据)。
+\end{itemize}
+
+\subsubsection{4.2 基于人类反馈的强化学习 (RLHF)}
+\textbf{流程 (3H 原则：Helpful, Honest, Harmless)}：
+\begin{enumerate}
+    \item \textbf{SFT (Supervised Fine-Tuning)}：在高质量指令数据上微调基座模型 $\pi_{SFT}$。
+    \item \textbf{RM (Reward Modeling)}：训练奖励模型 $r_\phi(x, y)$。
+    \begin{itemize}
+        \item 收集人类偏好数据：对同一个 prompt $x$，模型生成两个回答 $y_w$ (win) 和 $y_l$ (lose)。
+        \item 损失函数 (Pairwise Ranking Loss)：
+        $$ \mathcal{L}_{RM} = - \log \sigma(r_\phi(x, y_w) - r_\phi(x, y_l)) $$
+    \end{itemize}
+    \item \textbf{PPO (Proximal Policy Optimization)}：利用强化学习优化模型 $\pi_\theta$。
+    \textbf{目标函数}：
+    $$ \max_{\pi_\theta} \mathbb{E} [r_\phi(x, y) - \beta \log \frac{\pi_\theta(y|x)}{\pi_{SFT}(y|x)}] $$
+    \textit{注：KL 散度项 $\beta \log (\dots)$ 用于约束模型不要偏离 SFT 模型太远，防止“奖励模型欺骗 (Reward Hacking)”。}
+\end{enumerate}
+
+\subsubsection{4.3 直接偏好优化 (DPO, Direct Preference Optimization)}
+\textbf{核心突破}：无需训练奖励模型，无需复杂的强化学习 (PPO)。
+\textbf{推导}：从 RLHF 的最优解公式出发，反解出奖励函数 $r$ 与策略 $\pi$ 的关系，代入偏好损失。
+\textbf{最终损失函数}：
+\begin{equation}
+    \mathcal{L}_{DPO} = - \mathbb{E}_{(x, y_w, y_l)} \left[ \log \sigma \left( \beta \log \frac{\pi_\theta(y_w|x)}{\pi_{ref}(y_w|x)} - \beta \log \frac{\pi_\theta(y_l|x)}{\pi_{ref}(y_l|x)} \right) \right]
+\end{equation}
+\textit{直观理解：增加好回答 $y_w$ 的相对概率，降低坏回答 $y_l$ 的相对概率。}
+
+% =========================================================================
+% 10. 提示学习 (Prompt Learning)
+% =========================================================================
+\subsection{5. 提示学习}
+
+\subsubsection{5.1 上下文学习 (In-Context Learning, ICL)}
+无需更新参数，仅通过在 Prompt 中提供示例 (Demonstrations) 让模型学会任务。
+\begin{itemize}
+    \item \textbf{Zero-shot}：仅提供任务描述。
+    \item \textbf{One-shot / Few-shot}：提供 1 个或 $K$ 个示例。
+    $$ \text{Prompt} = I, x_1, y_1, \dots, x_k, y_k, x_{test} \to \text{LLM} \to y_{test} $$
+\end{itemize}
+
+\subsubsection{5.2 思维链 (Chain-of-Thought, CoT)}
+\textbf{核心}：Let's think step by step.
+在 Prompt 中加入推理步骤 (Rationale)，显著提升模型解决数学、逻辑推理等复杂任务的能力。
+\begin{itemize}
+    \item \textbf{原理}：将复杂问题 $P(y|x)$ 分解为多步推理 $P(z_1|x)P(z_2|x, z_1)\dots$。
+    \item \textbf{Zero-shot CoT}：只需追加 "Let's think step by step" 即可激发推理能力。
+    \item \textbf{涌现能力 (Emergent Ability)}：CoT 能力通常在模型参数 $>100B$ 时才显著出现。
+\end{itemize}
 \newpage
 
-\section{机器翻译 \small{(4学时 张家俊)}}
-\subsection{机器翻译概论}
-\subsection{统计机器翻译}
-\subsection{神经机器翻译}
-\subsection{译文质量评估}
+\section{大模型其他知识 \small{(6学时 张家俊)}}
+
+\begin{note}[本章概览]
+本章聚焦于LLM能力的横向扩展与纵向增强：
+\begin{enumerate}
+    \item \textbf{多语言大模型}：解决语言资源不平衡问题，从英语扩展到多语言。
+    \item \textbf{多模态大模型 (LMM)}：打破模态壁垒，实现图/文/音/视频的统一理解与生成。
+    \item \textbf{检索增强生成 (RAG)}：解决幻觉与知识时效性问题，是企业级应用落地的首选方案。
+\end{enumerate}
+\end{note}
+
+% =========================================================================
+% 11. 多语言与多模态大模型
+% =========================================================================
+\subsection{1. 多语言大模型 (Multilingual LLM)}
+
+\subsubsection{1.1 背景与挑战}
+\begin{itemize}
+    \item \textbf{资源不平衡}：绝大多数LLM（如LLaMA, GPT-3）以英语为主，低资源语言表现差。
+    \item \textbf{词表扩展}：原模型词表对非英语支持差（例如一个汉字被拆分为多个Token，效率低）。
+\end{itemize}
+
+\subsubsection{1.2 关键技术}
+\begin{itemize}
+    \item \textbf{词表扩充 (Vocabulary Expansion)}：
+    在原有词表基础上增加目标语言的Token。需重新训练Embedding层，保持Transformer主体参数不变或微调。
+    \item \textbf{跨语言指令微调 (Cross-lingual Instruction Tuning)}：
+    利用翻译数据或多语言指令集（如xP3, FLORES），激发模型的跨语言泛化能力。
+\end{itemize}
+
+\subsection{2. 多模态大模型 (Multimodal LLM)}
+
+\subsubsection{2.1 架构范式}
+核心思想：\textbf{将视觉信号“翻译”为语言模型能理解的Embedding}。
+通用架构 = \textbf{视觉编码器} + \textbf{连接器} + \textbf{LLM基座}。
+
+\begin{enumerate}
+    \item \textbf{视觉编码器 (Visual Encoder)}：
+    通常使用 \textbf{CLIP (ViT)} 或 \textbf{Eva-CLIP}。
+    将图像划分为 Patch，编码为视觉特征向量。
+    \item \textbf{连接器 (Connector/Projector)}：
+    \begin{itemize}
+        \item \textbf{Linear Layer} (LLaVA)：简单的全连接层，将视觉维度映射到文本维度。
+        \item \textbf{Q-Former} (BLIP-2)：使用一组可学习的 Query 向量，从冻结的视觉编码器中提取最相关的视觉特征。
+        \item \textbf{Cross-Attention} (Flamingo)：在LLM层间插入交叉注意力层，注入视觉信息。
+    \end{itemize}
+    \item \textbf{LLM基座}：
+    负责推理和生成。通常冻结参数或仅进行LoRA微调。
+\end{enumerate}
+
+\subsubsection{2.2 经典模型}
+\begin{itemize}
+    \item \textbf{CLIP (OpenAI)}：通过 4亿 图文对进行\textbf{对比学习 (Contrastive Learning)}，对齐了图像和文本空间，是大多数多模态模型的基石。
+    \item \textbf{LLaVA (Large Language and Vision Assistant)}：
+    \begin{itemize}
+        \item \textbf{创新点}：使用 GPT-4 生成高质量的图文指令数据（Visual Instruction Tuning）。
+        \item \textbf{训练}：阶段1-特征对齐（预训练连接器）；阶段2-端到端微调。
+    \end{itemize}
+    \item \textbf{BLIP-2}：引入 Q-Former，实现了轻量级的视觉-语言对齐，大幅降低了训练成本。
+    \item \textbf{GPT-4V / Gemini}：原生多模态（Native Multimodal），从预训练阶段就开始混合图文数据。
+\end{itemize}
+
+% =========================================================================
+% 12. 检索增强生成 (RAG)
+% =========================================================================
+\subsection{3. 检索增强生成 (RAG)}
+
+\subsubsection{3.1 核心动机}
+解决 LLM 的两大痛点：
+\begin{itemize}
+    \item \textbf{幻觉 (Hallucination)}：一本正经地胡说八道。
+    \item \textbf{知识过时 (Knowledge Cutoff)}：无法回答训练数据截止之后的问题（如“昨天那场比赛谁赢了？”）。
+\end{itemize}
+
+\subsubsection{3.2 RAG 进化范式}
+\begin{enumerate}
+    \item \textbf{Naive RAG (初级 RAG)}：
+    \textit{Retrieve-Read} 模式。
+    $$ P(y|x) \approx P(y|x, \text{Retrieved Docs}) $$
+    流程：索引 $\to$ 检索 $\to$ 生成。缺陷是检索精度低导致生成质量差。
+    \item \textbf{Advanced RAG (高级 RAG)}：
+    增加了\textbf{检索前优化}（Query Rewriting）和\textbf{检索后优化}（Re-ranking, Summarization）。
+    \item \textbf{Modular RAG (模块化 RAG)}：
+    将检索、生成、评估拆分为独立模块，支持迭代检索（Iterative Retrieval）和自适应检索（Adaptive Retrieval, 如 Self-RAG）。
+\end{enumerate}
+
+\subsubsection{3.3 关键技术细节}
+\paragraph{A. 索引优化 (Indexing)}
+\begin{itemize}
+    \item \textbf{分块 (Chunking)}：
+    \begin{itemize}
+        \item \textbf{滑动窗口}：重叠切分，保持语义连续性。
+        \item \textbf{Small-to-Big}：检索时匹配小块（句子级），生成时送入对应的大块（窗口或整段），兼顾检索精度与上下文完整性。
+    \end{itemize}
+    \item \textbf{元数据过滤}：在 Chunk 中添加 Year, Author, Title 等元数据，支持精确过滤。
+\end{itemize}
+
+\paragraph{B. 检索优化 (Retrieval)}
+\begin{itemize}
+    \item \textbf{混合检索 (Hybrid Search)}：
+    $$ \text{Score} = \alpha \cdot \text{Sparse}(BM25) + (1-\alpha) \cdot \text{Dense}(Vector) $$
+    结合关键词匹配（精确匹配专有名词）和语义检索（理解意图）的优势。
+    \item \textbf{重排序 (Re-ranking)}：
+    使用 Cross-Encoder 对初排回来的 Top-50 文档进行精细打分，取 Top-5 给 LLM。精度提升显著。
+\end{itemize}
+
+\paragraph{C. 生成优化 (Generation)}
+\begin{itemize}
+    \item \textbf{Self-RAG}：模型学会输出 \texttt{[Retrieve]}, \texttt{[Relevant]}, \texttt{[Support]} 等特殊 Token，自我反思是否需要检索以及检索内容是否有用。
+\end{itemize}
+
+\subsubsection{3.4 评估体系 (RAGAS)}
+无需人工标注，使用强模型（如 GPT-4）作为裁判 (LLM-as-a-Judge)。
+\begin{itemize}
+    \item \textbf{忠实度 (Faithfulness)}：答案是否由检索内容推导出来？（检测幻觉）
+    \item \textbf{答案相关性 (Answer Relevance)}：答案是否回答了用户的问题？
+    \item \textbf{上下文相关性 (Context Relevance)}：检索到的文档是否包含回答问题所需的信息？
+\end{itemize}
 \newpage
+\section{NLP应用任务 \small{(6学时 张家俊)}}
 
+\begin{note}[本章知识图谱]
+本章聚焦于 NLP 技术在具体场景中的落地应用，重点掌握两大类任务：
+\begin{enumerate}
+    \item \textbf{文本分类与聚类}：对整段文本进行理解和归类。
+    \item \textbf{信息抽取 (IE)}：从非结构化文本中提取结构化知识（实体、关系、事件）。
+\end{enumerate}
+\end{note}
 
-\section{文本分类和聚类 \small{(3学时 张家俊)}}
-\subsection{基于统计学习的文本分类}
-\subsection{基于深度学习的文本分类}
-\subsection{文本分类性能评估}
-\subsection{文本相似度计算}
-\subsection{文本聚类算法}
-\subsection{文本聚类性能评估}
-\newpage
+% =========================================================================
+% 13. 文本分类与聚类
+% =========================================================================
+\subsection{1. 文本分类 (Text Classification)}
 
-\section{信息抽取 \small{(3学时 张家俊)}}
-\subsection{信息抽取概述}
-\subsection{命名实体识别}
-\subsection{实体消歧}
-\subsection{关系抽取与知识图谱}
-\subsection{事件抽取与事件图谱}
-\newpage
+\subsubsection{1.1 任务定义}
+给定文本 $d$ 和类别集合 $C = \{c_1, c_2, \dots, c_k\}$，寻找最优映射 $f: d \to c_i$。
+\textbf{典型应用}：垃圾邮件过滤、新闻分类、情感分析。
 
+\subsubsection{1.2 传统机器学习方法}
+\textbf{核心流程}：特征工程 + 分类器。
+\begin{itemize}
+    \item \textbf{文本表示}：VSM (TF-IDF)。
+    \item \textbf{朴素贝叶斯 (Naive Bayes)}：
+    基于贝叶斯公式和“特征独立性假设”。
+    $$ P(c|d) = \frac{P(c) \prod P(w_i|c)}{P(d)} \propto P(c) \prod_{i=1}^n P(w_i|c) $$
+    \textit{优点}：训练快，对短文本效果好；\textit{缺点}：独立性假设过于强，忽略了词序。
+    \item \textbf{支持向量机 (SVM)}：
+    寻找一个超平面，最大化不同类别样本间的间隔 (Margin)。对于非线性可分数据，利用核函数 (Kernel Trick) 映射到高维空间。
+\end{itemize}
 
-\section{预训练语言模型 \small{(4学时 张家俊)}}
-\subsection{词向量表示回顾}
-\subsection{ELMo模型预训练语言模型}
-\subsection{BERT模型预训练语言模型}
-\subsection{GPT模型预训练语言模型}
-\newpage
+\subsubsection{1.3 深度学习方法}
+\begin{itemize}
+    \item \textbf{TextCNN}：利用不同宽度的卷积核 (Convolution Filter) 提取 N-gram 特征，通过 Max-Pooling 捕获最显著特征。
+    \item \textbf{RNN/LSTM}：利用序列结构捕获长距离依赖。
+    \item \textbf{Attention/BERT}：利用自注意力机制捕获全局语义，是目前的主流方法。
+\end{itemize}
 
-\section{大语言模型：训练与对齐 \small{(6学时 张家俊)}}
-\subsection{大语言模型概述}
-\subsection{大语言模型训练数据}
-\subsection{语言模型训练方法}
-\subsection{大语言模型指令微调}
-\subsection{基于人类反馈的对齐}
-\newpage
+\subsection{2. 文本聚类 (Text Clustering)}
+\textbf{任务}：无监督地将文本集合划分为若干个簇 (Cluster)，使得簇内相似度高，簇间相似度低。
+\begin{itemize}
+    \item \textbf{K-means}：迭代算法。1. 随机选择 K 个质心；2. 将样本分配给最近的质心；3. 更新质心位置。
+    \item \textbf{层次聚类 (HAC)}：自底向上（合并）或自顶向下（分裂）。不需要预先指定 K 值。
+\end{itemize}
 
-\section{多语言大模型 \small{(3学时 张家俊)}}
-\subsection{多语言大模型方法}
-\subsection{多语言大模型训练}
-\subsection{多语言大模型对齐}
-\newpage
+% =========================================================================
+% 14. 信息抽取 (Information Extraction, IE)
+% =========================================================================
+\subsection{3. 信息抽取 (Information Extraction)}
 
-\section{提示学习 \small{(3学时 张家俊)}}
-\subsection{基础提示学习方法}
-\subsection{上下文学习}
-\subsection{思维链提示}
-\newpage
+\subsubsection{3.1 命名实体识别 (NER)}
+\textbf{任务}：识别文本中的人名 (PER)、地名 (LOC)、机构名 (ORG) 等七类实体。
+\textbf{形式化}：序列标注问题 (Sequence Labeling)。
+\begin{itemize}
+    \item \textbf{标注体系}：BIO (Begin, Inside, Outside) 或 BIOES。
+    \item \textbf{方法演进}：
+    \begin{enumerate}
+        \item \textbf{HMM (隐马尔可夫)}：生成式模型，建模联合概率 $P(X,Y)$。
+        \item \textbf{CRF (条件随机场)}：判别式模型，建模条件概率 $P(Y|X)$，解决了 HMM 的独立性假设限制，是传统方法的 SOTA。
+        \item \textbf{BiLSTM+CRF}：深度学习时代的标配。BiLSTM 提取上下文特征，CRF 约束标签转移（如 B-PER 后不能接 I-LOC）。
+    \end{enumerate}
+\end{itemize}
 
+\subsubsection{3.2 关系抽取 (Relation Extraction)}
+\textbf{任务}：给定句子和两个实体，判断它们之间的语义关系（如 \textit{Spouse, Birthplace}）。
+\textit{例：[姚明] 是 [上海] 人。 $\to$ relation: Citizen\_of}
+\begin{itemize}
+    \item \textbf{有监督方法}：转化为分类问题。特征包括词汇、词性、句法树路径等。
+    \item \textbf{远程监督 (Distant Supervision)}：利用知识库（如 Freebase）自动回标数据。假设：如果在 KB 中 $<e_1, e_2>$ 有关系 $r$，则包含这两实体的句子都表达了关系 $r$。
+    \textit{问题：带来大量噪声数据（噪音标签）。}
+    \item \textbf{联合抽取 (Joint Extraction)}：将实体识别和关系抽取在一个模型中完成，避免流水线方法的误差传播。
+\end{itemize}
 
-\section{检索增强的大语言模型 \small{(2学时 张家俊)}}
-\subsection{大语言模型问题分析}
-\subsection{检索增强的大语言模型}
-\newpage
+\subsubsection{3.3 事件抽取 (Event Extraction)}
+\textbf{任务}：从文本中识别特定类型的事件及其论元 (Argument)。
+\textit{例：[9月3日]，[习近平]在[厦门]会见[普京]。}
+\begin{itemize}
+    \item \textbf{触发词 (Trigger)}：会见。
+    \item \textbf{事件类型}：Contact.Meet。
+    \item \textbf{论元}：习近平 (Entity), 普京 (Entity), 厦门 (Place), 9月3日 (Time)。
+\end{itemize}
+\textbf{难点}：触发词歧义、论元缺省、多事件共现。
 
+% =========================================================================
+% 补充：机器翻译 (Machine Translation)
+% =========================================================================
+\subsection{4. 机器翻译 (Machine Translation)}
+\begin{note}
+\textit{(注：PPT目录提及但内容主要集中在分类和IE，此处补充核心考点)}
+\end{note}
+\begin{itemize}
+    \item \textbf{统计机器翻译 (SMT)}：基于噪声信道模型 $P(E|F) \propto P(F|E)P(E)$。包含翻译模型（对齐）和语言模型。
+    \item \textbf{神经机器翻译 (NMT)}：基于 Encoder-Decoder 框架。
+    $$ P(y_t | y_{<t}, x) = \text{softmax}(g(h_t, c_t)) $$
+    其中 $c_t$ 是通过 Attention 机制计算的上下文向量。
+    \item \textbf{评价指标}：BLEU (BiLingual Evaluation Understudy)，计算 N-gram 的精确率。
+\end{itemize}
 
 \section{课程总结与展望 \small{(3学时 宗成庆)}}
 \subsection{课程内容回顾}
